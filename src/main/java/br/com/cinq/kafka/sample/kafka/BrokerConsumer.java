@@ -3,8 +3,13 @@ package br.com.cinq.kafka.sample.kafka;
 import java.util.Arrays;
 import java.util.Properties;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Callback;
@@ -14,32 +19,41 @@ import br.com.cinq.kafka.sample.Consumer;
  * Implements the loop to receive messages and call back the user operations.
  */
 @Component
+@Profile("!unit")
 public class BrokerConsumer implements Consumer, DisposableBean {
 
    public static String TXID = "txid";
 
    /** Concurrent threads reading messages */
+   @Value("${broker.partitions:5}")
    private int partitions;
 
    /** Topic for subscribe, if applicable */
+   @Value("${broker.topic:karma-sample}")
    private String topic;
 
    /** Kafka server */
+   @Value("${broker.bootstrapServer:localhost\\:9092}")
    private String bootstrapServer;
 
    /** Group Id */
+   @Value("${broker.group-id:test}")
    private String groupId;
 
    /** Consumer class */
+   @Autowired
    private Callback callback;
 
    /** enableAutoCommit */
-   private boolean enableAutoCommit = true;
+   @Value("${broker.consumer.enable-auto-commit:true}")
+   private boolean enableAutoCommit;
 
    /** auto.commit.interval.ms */
+   @Value("${broker.consumer.auto-commit-interval:1000}")
    private int autoCommitInterval = 1000;
 
    /** session.timeout.ms */
+   @Value("${broker.session-timeout:30000}")
    private int sessionTimeout = 30000;
 
    /** List of consumers */
@@ -64,6 +78,7 @@ public class BrokerConsumer implements Consumer, DisposableBean {
    /**
     * Start to receive messages
     */
+   @PostConstruct
    public void start() {
 
       Properties props = new Properties();

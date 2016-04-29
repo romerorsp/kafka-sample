@@ -38,14 +38,6 @@ public class Config extends ResourceConfig {
     public Producer createBrokerProducer() {
         BrokerProducer producer = new BrokerProducer();
 
-        producer.setBootstrapServer("localhost:9092");
-        producer.setPartitions(5);
-        producer.setGroupId("test");
-        producer.setTopic("kafka-sample");
-        producer.setBatchSize(16384);
-        producer.setLingerTime(0);
-        producer.setBufferMemory(33554432);
-
         return producer;
     }
 
@@ -55,18 +47,6 @@ public class Config extends ResourceConfig {
     public Consumer createBrokerConsumer() {
 
         BrokerConsumer consumer = new BrokerConsumer();
-
-        consumer.setBootstrapServer("localhost:9092");
-        consumer.setPartitions(5);
-        consumer.setGroupId("test");
-        consumer.setTopic("kafka-sample");
-        consumer.setAutoCommitInterval(1000);
-        consumer.setSessionTimeout(30000);
-
-        consumer.setCallback(new MyCallback());
-        
-        consumer.start();
-
         return consumer;
     }
 

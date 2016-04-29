@@ -7,6 +7,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Producer;
@@ -19,26 +20,29 @@ import br.com.cinq.kafka.sample.exception.QueueException;
 public class BrokerProducer implements Producer {
    Logger logger = LoggerFactory.getLogger(Producer.class);
 
+   /** Concurrent threads reading messages */
+   @Value("${broker.partitions:5}")
+   private int partitions;
+
+   /** Topic for subscribe, if applicable */
+   @Value("${broker.topic:karma-sample}")
+   private String topic;
+
    /** Kafka server */
+   @Value("${broker.bootstrapServer:localhost\\:9092}")
    private String bootstrapServer;
 
    /** Size of the package for sending messages */
+   @Value("${broker.producer.batch-size:16384}")
    private int batchSize;
 
    /** Time to wait before sending */
+   @Value("${broker.producer.linger-time-ms:0}")
    private int lingerTime;
 
    /** Amount of memory available for buffering, before block the producer */
+   @Value("${broker.producer.buffer-size:33554432}")
    private int bufferMemory;
-
-   /** Topic name */
-   private String topic;
-
-   /** Total amount of partitions */
-   private int partitions;
-
-   /** Group Id */
-   private String groupId;
 
    private int roundRobinCount = 0;
 
@@ -75,7 +79,6 @@ public class BrokerProducer implements Producer {
          props.put("batch.size", getBatchSize());
          props.put("linger.ms", getLingerTime());
          props.put("buffer.memory", getBufferMemory());
-         props.put("groupid", getGroupId());
          props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
          props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
@@ -130,14 +133,6 @@ public class BrokerProducer implements Producer {
 
    public void setPartitions(int partitions) {
       this.partitions = partitions;
-   }
-
-   public String getGroupId() {
-      return groupId;
-   }
-
-   public void setGroupId(String groupId) {
-      this.groupId = groupId;
    }
 
 }
