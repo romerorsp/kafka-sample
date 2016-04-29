@@ -53,7 +53,7 @@ public class KafkaSampleResource {
 			logger.info("Sending message - repeat {} {}", message, repeat);
 
 			for(int i=0;i<repeat;i++) {
-				sampleProducer.send(message);
+				sampleProducer.send(message.replace("{count}","{"+i+"}"));
 			}
 
 		} catch (Exception e) {
