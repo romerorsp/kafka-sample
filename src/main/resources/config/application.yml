@@ -7,7 +7,7 @@ spring:
     profiles: default
 
 broker:
-    bootstrapServer: vmteste007:9092
+    bootstrapServer: localhost:9092
     partitions: 10
     topic: "karma-sample"
     session-timeout: 30000

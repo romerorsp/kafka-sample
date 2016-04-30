@@ -18,121 +18,123 @@ import br.com.cinq.kafka.sample.exception.QueueException;
  */
 @Component
 public class BrokerProducer implements Producer {
-   Logger logger = LoggerFactory.getLogger(Producer.class);
+    Logger logger = LoggerFactory.getLogger(Producer.class);
 
-   /** Concurrent threads reading messages */
-   @Value("${broker.partitions:5}")
-   private int partitions;
+    /** Concurrent threads reading messages */
+    @Value("${broker.partitions:5}")
+    private int partitions;
 
-   /** Topic for subscribe, if applicable */
-   @Value("${broker.topic:karma-sample}")
-   private String topic;
+    /** Topic for subscribe, if applicable */
+    @Value("${broker.topic:karma-sample}")
+    private String topic;
 
-   /** Kafka server */
-   @Value("${broker.bootstrapServer:localhost\\:9092}")
-   private String bootstrapServer;
+    /** Kafka server */
+    @Value("${broker.bootstrapServer:localhost\\:9092}")
+    private String bootstrapServer;
 
-   /** Size of the package for sending messages */
-   @Value("${broker.producer.batch-size:16384}")
-   private int batchSize;
+    /** Size of the package for sending messages */
+    @Value("${broker.producer.batch-size:16384}")
+    private int batchSize;
 
-   /** Time to wait before sending */
-   @Value("${broker.producer.linger-time-ms:0}")
-   private int lingerTime;
+    /** Time to wait before sending */
+    @Value("${broker.producer.linger-time-ms:0}")
+    private int lingerTime;
 
-   /** Amount of memory available for buffering, before block the producer */
-   @Value("${broker.producer.buffer-size:33554432}")
-   private int bufferMemory;
+    /** Amount of memory available for buffering, before block the producer */
+    @Value("${broker.producer.buffer-size:33554432}")
+    private int bufferMemory;
 
-   private int roundRobinCount = 0;
+    private int roundRobinCount = 0;
 
-   /** Instance of the producer */
-   private KafkaProducer<String, String> producer = null;
+    /** Instance of the producer */
+    private KafkaProducer<String, String> producer = null;
 
-   /**
+    /**
     * Send the message. The message must be serialized as string
     */
-   @Override
-   public void send(String message) throws QueueException {
-      producer = getProducer();
+    @Override
+    public void send(String message) throws QueueException {
+        producer = getProducer();
 
-      try {
-         producer.send(new ProducerRecord<String, String>(getTopic()+"-"+roundRobinCount, message)).get();
-      } catch (InterruptedException | ExecutionException e) {
-         logger.warn("Kafka Producer [{}]", e.getMessage(), e);
-      }
+        try {
+            logger.debug("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
 
-      roundRobinCount += 1;
-      if (roundRobinCount > partitions) {
-         roundRobinCount = 0;
-      }
+            producer.send(new ProducerRecord<String, String>(getTopic() + "-" + roundRobinCount, message)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Kafka Producer [{}]", e.getMessage(), e);
+        }
 
-   }
+        roundRobinCount += 1;
+        if (roundRobinCount > partitions) {
+            roundRobinCount = 0;
+        }
 
-   private KafkaProducer<String, String> getProducer() {
-      if (producer == null) {
+    }
 
-         Properties props = new Properties();
-         props.put("bootstrap.servers", getBootstrapServer());
-         props.put("acks", "all");
-         props.put("retries", 0);
-         props.put("batch.size", getBatchSize());
-         props.put("linger.ms", getLingerTime());
-         props.put("buffer.memory", getBufferMemory());
-         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    private KafkaProducer<String, String> getProducer() {
+        if (producer == null) {
 
-         producer = new KafkaProducer<>(props);
-      }
-      return producer;
-   }
+            Properties props = new Properties();
+            props.put("bootstrap.servers", getBootstrapServer());
+            props.put("acks", "all");
+            props.put("retries", 0);
+            props.put("batch.size", getBatchSize());
+            props.put("linger.ms", getLingerTime());
+            props.put("buffer.memory", getBufferMemory());
+            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-   public String getBootstrapServer() {
-      return bootstrapServer;
-   }
+            producer = new KafkaProducer<>(props);
+        }
+        return producer;
+    }
 
-   public void setBootstrapServer(String bootstrapServer) {
-      this.bootstrapServer = bootstrapServer;
-   }
+    public String getBootstrapServer() {
+        return bootstrapServer;
+    }
 
-   public int getBatchSize() {
-      return batchSize;
-   }
+    public void setBootstrapServer(String bootstrapServer) {
+        this.bootstrapServer = bootstrapServer;
+    }
 
-   public void setBatchSize(int batchSize) {
-      this.batchSize = batchSize;
-   }
+    public int getBatchSize() {
+        return batchSize;
+    }
 
-   public int getLingerTime() {
-      return lingerTime;
-   }
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
 
-   public void setLingerTime(int lingerTime) {
-      this.lingerTime = lingerTime;
-   }
+    public int getLingerTime() {
+        return lingerTime;
+    }
 
-   public int getBufferMemory() {
-      return bufferMemory;
-   }
+    public void setLingerTime(int lingerTime) {
+        this.lingerTime = lingerTime;
+    }
 
-   public void setBufferMemory(int bufferMemory) {
-      this.bufferMemory = bufferMemory;
-   }
+    public int getBufferMemory() {
+        return bufferMemory;
+    }
 
-   public String getTopic() {
-      return topic;
-   }
+    public void setBufferMemory(int bufferMemory) {
+        this.bufferMemory = bufferMemory;
+    }
 
-   public void setTopic(String topic) {
-      this.topic = topic;
-   }
+    public String getTopic() {
+        return topic;
+    }
 
-   public int getPartitions() {
-      return partitions;
-   }
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
 
-   public void setPartitions(int partitions) {
-      this.partitions = partitions;
-   }
+    public int getPartitions() {
+        return partitions;
+    }
+
+    public void setPartitions(int partitions) {
+        this.partitions = partitions;
+    }
 
 }

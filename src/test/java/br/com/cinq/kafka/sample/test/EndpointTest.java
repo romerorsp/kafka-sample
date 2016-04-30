@@ -21,7 +21,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.client.RestTemplate;
 
 import br.com.cinq.kafka.sample.application.Application;
-
+import br.com.cinq.kafka.sample.callback.MyCallback;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -29,30 +29,54 @@ import br.com.cinq.kafka.sample.application.Application;
 @IntegrationTest("server.port=9000")
 @ActiveProfiles("unit")
 public class EndpointTest {
-	Logger logger = LoggerFactory.getLogger(EndpointTest.class);
+    Logger logger = LoggerFactory.getLogger(EndpointTest.class);
 
-	private final String localhost = "http://localhost:";
-	
-	@Value("${local.server.port}")
-	private int port;
+    private final String localhost = "http://localhost:";
 
-	private RestTemplate restTemplate = new TestRestTemplate();
+    @Value("${local.server.port}")
+    private int port;
 
+    private RestTemplate restTemplate = new TestRestTemplate();
 
-	@Test
-	public void testPost() {
-		String newMessage = "A wild message appears!";
-		
-		HttpHeaders headers = new HttpHeaders();
-		headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<String> entity = new HttpEntity<String>(newMessage, headers);
+    @Test
+    public void testPostAMessage() throws InterruptedException {
+        String newMessage = "A wild message appears!";
 
-		ResponseEntity<Void> response = this.restTemplate.exchange(
-				this.localhost + this.port + "/rest/kafka", HttpMethod.POST, entity, Void.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<String>(newMessage, headers);
 
-		Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+        ResponseEntity<Void> response = this.restTemplate.exchange(this.localhost + this.port + "/rest/kafka",
+                HttpMethod.POST, entity, Void.class);
 
+        Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
 
-	}
+        Thread.sleep(2000L);
+
+        Assert.assertNotEquals(2, MyCallback.getMessages());
+
+    }
+
+    @Test
+    public void testPostSeveralMessages() throws InterruptedException {
+        String newMessage = "A pack of wild messages appears!{count}";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<String>(newMessage, headers);
+
+        ResponseEntity<Void> response = this.restTemplate.exchange(this.localhost + this.port + "/rest/kafka/2",
+                HttpMethod.POST, entity, Void.class);
+
+        Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        Thread.sleep(2000L);
+
+        Assert.assertNotEquals(2, MyCallback.getMessages());
+        Assert.assertEquals(2, MyCallback.getMessages().size());
+
+    }
+
 }
