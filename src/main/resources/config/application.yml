@@ -4,10 +4,8 @@ server:
 spring:
     jersey:
         type: filter
-    profiles: default
 
 broker:
-    bootstrapServer: localhost:9092
     partitions: 10
     topic: "karma-sample"
     session-timeout: 30000
@@ -17,6 +15,5 @@ broker:
         auto-commit-interval: 1000
     producer:
         batch-size: 16384
-        linger-time-ms: 0
         buffer-size: 33554432
 

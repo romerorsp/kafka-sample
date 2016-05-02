@@ -25,10 +25,10 @@
 	</appender>
 
 
-	<logger name="be.com.cinq" level="INFO" />
+	<logger name="br.com.cinq" level="INFO" />
 
 
-	<root level="INFO">
+	<root level="WARN">
 		<appender-ref ref="STDOUT" />
 		<appender-ref ref="FileLog" />
 	</root>
