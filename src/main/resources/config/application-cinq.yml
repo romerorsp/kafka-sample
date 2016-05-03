@@ -1,7 +1,4 @@
-spring:
-    profiles: ec2
-
 broker:
     bootstrapServer: vmteste007:9092
     producer:
-        linger-time-ms: 1
+        linger-time-ms: 0

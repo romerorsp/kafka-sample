@@ -7,7 +7,9 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Producer;
@@ -17,6 +19,8 @@ import br.com.cinq.kafka.sample.exception.QueueException;
  * Implements the producer for Kafka.
  */
 @Component
+@Profile("!unit")
+@Qualifier("sampleProducer")
 public class BrokerProducer implements Producer {
     Logger logger = LoggerFactory.getLogger(Producer.class);
 
@@ -73,6 +77,8 @@ public class BrokerProducer implements Producer {
 
     private KafkaProducer<String, String> getProducer() {
         if (producer == null) {
+
+        	logger.info("Connecting to {}", getBootstrapServer());
 
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServer());

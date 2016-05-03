@@ -32,23 +32,23 @@ public class Config extends ResourceConfig {
         //		property(ServletProperties.FILTER_FORWARD_ON_404, true);
     }
 
-    @Bean
-    @Profile("!unit")
-    @Qualifier("sampleProducer")
-    public Producer createBrokerProducer() {
-        BrokerProducer producer = new BrokerProducer();
-
-        return producer;
-    }
-
-    @Bean
-    @Profile("!unit")
-    @Qualifier("sampleConsumer")
-    public Consumer createBrokerConsumer() {
-
-        BrokerConsumer consumer = new BrokerConsumer();
-        return consumer;
-    }
+//    @Bean
+//    @Profile("!unit")
+//    @Qualifier("sampleProducer")
+//    public Producer createBrokerProducer() {
+//        BrokerProducer producer = new BrokerProducer();
+//
+//        return producer;
+//    }
+//
+//    @Bean
+//    @Profile("!unit")
+//    @Qualifier("sampleConsumer")
+//    public Consumer createBrokerConsumer() {
+//
+//        BrokerConsumer consumer = new BrokerConsumer();
+//        return consumer;
+//    }
 
     @Bean
     @Profile("unit")

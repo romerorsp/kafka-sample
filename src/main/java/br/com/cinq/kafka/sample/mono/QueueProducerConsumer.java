@@ -11,7 +11,6 @@ import br.com.cinq.kafka.sample.exception.QueueException;
 /**
  * Implements the loop to receive messages and call back the user operations.
  */
-@Component
 public class QueueProducerConsumer implements Producer, Consumer, DisposableBean {
 
     public static String TXID = "txid";

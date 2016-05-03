@@ -3,11 +3,13 @@ package br.com.cinq.kafka.sample.kafka;
 import java.util.Arrays;
 import java.util.Properties;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -18,9 +20,12 @@ import br.com.cinq.kafka.sample.Consumer;
 /**
  * Implements the loop to receive messages and call back the user operations.
  */
-@Component
 @Profile("!unit")
-public class BrokerConsumer implements Consumer, DisposableBean {
+@Component
+@Qualifier("sampleConsumer")
+public class BrokerConsumer implements Consumer, DisposableBean, InitializingBean {
+
+	static Logger logger = LoggerFactory.getLogger(BrokerConsumer.class);
 
     public static String TXID = "txid";
 
@@ -53,7 +58,7 @@ public class BrokerConsumer implements Consumer, DisposableBean {
     private int autoCommitInterval = 1000;
 
     /** session.timeout.ms */
-    @Value("${broker.session-timeout:30000}")
+    @Value("${broker.session-timeout}")
     private int sessionTimeout = 30000;
 
     /** List of consumers */
@@ -78,15 +83,18 @@ public class BrokerConsumer implements Consumer, DisposableBean {
     /**
     * Start to receive messages
     */
-    @PostConstruct
     public void start() {
+
+    	logger.info("Connecting to {}", getBootstrapServer());
+    	logger.info("Auto Commit set to {}", getEnableAutoCommit());
 
         Properties props = new Properties();
         props.put("bootstrap.servers", getBootstrapServer());
         props.put("group.id", getGroupId());
-        props.put("enable.auto.commit", "true");
-        props.put("auto.commit.interval.ms", "1000");
-        props.put("session.timeout.ms", "30000");
+        props.put("enable.auto.commit", getEnableAutoCommit());
+        if(getEnableAutoCommit())
+        	props.put("auto.commit.interval.ms", getAutoCommitInterval());
+        props.put("session.timeout.ms", getSessionTimeout());
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
@@ -100,6 +108,7 @@ public class BrokerConsumer implements Consumer, DisposableBean {
             //         consumer.assign(Arrays.asList(partition));
 
             BrokerConsumerClient client = new BrokerConsumerClient();
+            client.setEnableAutoCommit(getEnableAutoCommit());
             client.setCallback(callback);
             client.setConsumer(consumer);
 
@@ -165,4 +174,9 @@ public class BrokerConsumer implements Consumer, DisposableBean {
     public void setSessionTimeout(int sessionTimeout) {
         this.sessionTimeout = sessionTimeout;
     }
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		start();
+	}
 }

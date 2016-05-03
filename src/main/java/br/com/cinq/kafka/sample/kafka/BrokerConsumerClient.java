@@ -2,6 +2,7 @@ package br.com.cinq.kafka.sample.kafka;
 
 import java.util.UUID;
 
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,47 +13,65 @@ import org.slf4j.MDC;
 import br.com.cinq.kafka.sample.Callback;
 
 public class BrokerConsumerClient implements Runnable {
-    Logger logger = LoggerFactory.getLogger(BrokerConsumerClient.class);
+	Logger logger = LoggerFactory.getLogger(BrokerConsumerClient.class);
 
-    private KafkaConsumer<String, String> consumer;
+	private KafkaConsumer<String, String> consumer;
 
-    private Callback callback;
+	private boolean enableAutoCommit = false;
 
-    @Override
-    public void run() {
+	private Callback callback;
 
-        UUID uuid = UUID.randomUUID();
-        MDC.put(consumer.toString(), uuid.toString());
+	@Override
+	public void run() {
 
-        try {
-            while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(1000);
-                if (records != null) {
-                    for (ConsumerRecord<String, String> record : records) {
-                        logger.debug("offset = {}, key = {}, value = {}", record.offset(), record.key(),
-                                record.value());
-                        callback.receive(record.value());
-                    }
-                }
-            }
-        } finally {
-            MDC.remove(consumer.toString());
-        }
-    }
+		UUID uuid = UUID.randomUUID();
+		MDC.put(consumer.toString(), uuid.toString());
 
-    public KafkaConsumer<String, String> getConsumer() {
-        return consumer;
-    }
+		try {
+			while (true) {
+				ConsumerRecords<String, String> records = consumer.poll(1000);
+				if (records != null) {
+					for (ConsumerRecord<String, String> record : records) {
+						logger.debug("offset = {}, key = {}, value = {}", record.offset(), record.key(),
+								record.value());
+						callback.receive(record.value());
+					}
+				}
+				if (!isEnableAutoCommit()) {
+					try {
+						consumer.commitSync();
+					} catch (CommitFailedException e) {
+						logger.warn("Commit failed!!! {}", e.getMessage(), e);
+					}
+				}
+			}
+		} finally {
+			MDC.remove(consumer.toString());
+		}
+	}
 
-    public void setConsumer(KafkaConsumer<String, String> consumer) {
-        this.consumer = consumer;
-    }
+	public KafkaConsumer<String, String> getConsumer() {
+		return consumer;
+	}
 
-    public Callback getCallback() {
-        return callback;
-    }
+	public void setConsumer(KafkaConsumer<String, String> consumer) {
+		this.consumer = consumer;
+	}
 
-    public void setCallback(Callback callback) {
-        this.callback = callback;
-    }
+	public Callback getCallback() {
+		return callback;
+	}
+
+	public void setCallback(Callback callback) {
+		this.callback = callback;
+	}
+
+	public boolean isEnableAutoCommit() {
+		return enableAutoCommit;
+	}
+
+	public void setEnableAutoCommit(boolean enableAutoCommit) {
+		this.enableAutoCommit = enableAutoCommit;
+	}
+
 }
