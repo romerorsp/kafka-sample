@@ -6,7 +6,7 @@ spring:
         type: filter
 
 broker:
-    partitions: 10
+    partitions: 11
     topic: "karma-sample"
     session-timeout: 30000
     consumer:

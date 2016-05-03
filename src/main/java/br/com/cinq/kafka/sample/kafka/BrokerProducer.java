@@ -61,7 +61,7 @@ public class BrokerProducer implements Producer {
         producer = getProducer();
 
         try {
-            logger.debug("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
+            logger.info("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
 
             producer.send(new ProducerRecord<String, String>(getTopic() + "-" + roundRobinCount, message)).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -69,7 +69,7 @@ public class BrokerProducer implements Producer {
         }
 
         roundRobinCount += 1;
-        if (roundRobinCount > partitions) {
+        if (roundRobinCount >= partitions) {
             roundRobinCount = 0;
         }
 
