@@ -24,7 +24,7 @@ public class MyCallback implements Callback {
         }
         lastUpdate = System.currentTimeMillis();
 
-        logger.info("Message received: {}", message);
+        logger.info("Message received: {} by {}", message, Thread.currentThread().getName()+":"+Thread.currentThread().getId());
         messages.add(message);
     }
 

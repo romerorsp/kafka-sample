@@ -32,7 +32,7 @@ public class BrokerConsumerClient implements Runnable {
 				ConsumerRecords<String, String> records = consumer.poll(1000);
 				if (records != null) {
 					for (ConsumerRecord<String, String> record : records) {
-						logger.debug("offset = {}, key = {}, value = {}", record.offset(), record.key(),
+						logger.debug("tid {}, offset = {}, key = {}, value = {}", Thread.currentThread().getName(), record.offset(), record.key(),
 								record.value());
 						callback.receive(record.value());
 					}

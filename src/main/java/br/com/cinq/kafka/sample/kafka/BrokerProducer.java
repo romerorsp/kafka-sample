@@ -61,7 +61,7 @@ public class BrokerProducer implements Producer {
         producer = getProducer();
 
         try {
-            logger.info("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
+            logger.debug("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
 
             producer.send(new ProducerRecord<String, String>(getTopic() + "-" + roundRobinCount, message)).get();
         } catch (InterruptedException | ExecutionException e) {
