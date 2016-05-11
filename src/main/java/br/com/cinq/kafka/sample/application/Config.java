@@ -3,12 +3,14 @@ package br.com.cinq.kafka.sample.application;
 import javax.ws.rs.ApplicationPath;
 
 import org.glassfish.jersey.server.ResourceConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import br.com.cinq.kafka.resource.KafkaSampleResource;
+import br.com.cinq.kafka.sample.Callback;
 import br.com.cinq.kafka.sample.Consumer;
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.callback.MyCallback;
@@ -57,6 +59,9 @@ public class Config extends ResourceConfig {
         return getTestProducerConsumer();
     }
 
+    @Autowired
+    Callback callback;
+
     @Bean
     @Profile("unit")
     @Qualifier("sampleConsumer")
@@ -69,7 +74,7 @@ public class Config extends ResourceConfig {
         if (testProducerConsumer == null) {
             testProducerConsumer = new QueueProducerConsumer();
             testProducerConsumer.setPartitions(5);
-            testProducerConsumer.setCallback(new MyCallback());
+            testProducerConsumer.setCallback(callback);
 
             testProducerConsumer.start();
         }

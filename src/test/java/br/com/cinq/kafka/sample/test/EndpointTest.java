@@ -1,10 +1,12 @@
 package br.com.cinq.kafka.sample.test;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
@@ -22,6 +24,7 @@ import org.springframework.web.client.RestTemplate;
 
 import br.com.cinq.kafka.sample.application.Application;
 import br.com.cinq.kafka.sample.callback.MyCallback;
+import br.com.cinq.kafka.sample.repository.MessagesRepository;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Application.class)
@@ -37,6 +40,14 @@ public class EndpointTest {
     private int port;
 
     private RestTemplate restTemplate = new TestRestTemplate();
+
+    @Autowired
+    MessagesRepository dao;
+
+    @Before
+    public void setUp() {
+        dao.deleteAll();
+    }
 
     @Test
     public void testPostAMessage() throws InterruptedException {
@@ -54,7 +65,7 @@ public class EndpointTest {
 
         Thread.sleep(2000L);
 
-        Assert.assertNotEquals(2, MyCallback.getMessages());
+        Assert.assertNotEquals(2, dao.count());
 
     }
 
@@ -67,15 +78,14 @@ public class EndpointTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<String>(newMessage, headers);
 
-        ResponseEntity<Void> response = this.restTemplate.exchange(this.localhost + this.port + "/rest/kafka/2",
+        ResponseEntity<Void> response = this.restTemplate.exchange(this.localhost + this.port + "/rest/kafka/10",
                 HttpMethod.POST, entity, Void.class);
 
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
 
         Thread.sleep(2000L);
 
-        Assert.assertNotEquals(2, MyCallback.getMessages());
-        Assert.assertEquals(2, MyCallback.getMessages().size());
+        Assert.assertEquals(10, dao.count());
 
     }
 

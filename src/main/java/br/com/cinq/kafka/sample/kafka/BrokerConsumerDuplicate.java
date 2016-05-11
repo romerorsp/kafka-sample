@@ -9,6 +9,11 @@ import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Consumer;
 
+/**
+ * Using Duplicates makes no difference.
+ * @author a.kretschmer
+ *
+ */
 @Profile("!unit")
 @Component
 @Qualifier("consumerDuplicate")

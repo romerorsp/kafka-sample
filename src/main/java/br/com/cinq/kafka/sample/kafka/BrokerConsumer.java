@@ -6,11 +6,13 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -23,11 +25,13 @@ import br.com.cinq.kafka.sample.Consumer;
 @Profile("!unit")
 @Component
 @Qualifier("sampleConsumer")
-public class BrokerConsumer implements Consumer, DisposableBean, InitializingBean {
+public class BrokerConsumer implements Consumer, DisposableBean, InitializingBean, ApplicationContextAware {
 
 	static Logger logger = LoggerFactory.getLogger(BrokerConsumer.class);
 
     public static String TXID = "txid";
+
+    ApplicationContext context;
 
     /** Concurrent threads reading messages */
     @Value("${broker.partitions:5}")
@@ -45,10 +49,6 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.group-id:test}")
     private String groupId;
 
-    /** Consumer class */
-    @Autowired
-    private Callback callback;
-
     /** enableAutoCommit */
     @Value("${broker.consumer.enable-auto-commit:true}")
     private boolean enableAutoCommit;
@@ -60,6 +60,8 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     /** session.timeout.ms */
     @Value("${broker.session-timeout}")
     private int sessionTimeout = 30000;
+
+    private Callback callback;
 
     /** List of consumers */
     Thread consumers[];
@@ -109,11 +111,16 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
             BrokerConsumerClient client = new BrokerConsumerClient();
             client.setEnableAutoCommit(getEnableAutoCommit());
-            client.setCallback(callback);
+            if(callback==null) {
+                client.setCallback(context.getBean(Callback.class));
+                logger.debug(client.getCallback().toString());
+            }
+            else
+                client.setCallback(callback);
             client.setConsumer(consumer);
 
             consumers[i] = new Thread(client);
-            consumers[i].setName(getBootstrapServer() + ":" + i);
+            consumers[i].setName(getBootstrapServer() + ":" + i + ":" + Thread.currentThread().getId());
             consumers[i].start();
         }
     }
@@ -179,4 +186,9 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 	public void afterPropertiesSet() throws Exception {
 		start();
 	}
+
+    @Override
+    public void setApplicationContext(ApplicationContext context) throws BeansException {
+        this.context = context;
+    }
 }

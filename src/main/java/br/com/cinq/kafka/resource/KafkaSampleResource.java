@@ -12,9 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.cinq.kafka.sample.Producer;
-import br.com.cinq.kafka.sample.callback.MyCallback;
+import br.com.cinq.kafka.sample.repository.MessagesRepository;
 
 /**
  * Greet Service
@@ -29,6 +30,9 @@ public class KafkaSampleResource {
     @Autowired
     @Qualifier("sampleProducer")
     Producer sampleProducer;
+
+    @Autowired
+    MessagesRepository dao;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -55,8 +59,12 @@ public class KafkaSampleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{repeat}")
+    @Transactional(readOnly=true)
     public Response sendBatch(@PathParam("repeat") int repeat, String message) {
         try {
+            logger.debug("Deleting all messages");
+            dao.deleteAll();
+
             logger.info("Sending message - repeat {} {}", message, repeat);
 
             for (int i = 0; i < repeat; i++) {
@@ -69,19 +77,11 @@ public class KafkaSampleResource {
         }
 
         // Check if all messages were received
-        int count = -1;
-        int lastCount = 0;
+        long count = 0;
         try {
-            Thread.sleep(1000);
-            if (MyCallback.getMessages() == null) {
-                return Response.serverError().entity("No messages were received after timeout").build();
-            }
+            Thread.sleep(30000);
 
-            while (lastCount != count) {
-                count = MyCallback.getMessages().size();
-                Thread.sleep(5000);
-                lastCount = MyCallback.getMessages().size();
-            }
+            count = dao.count();
         } catch (Exception e) {
             return Response.serverError().entity("An exception occurred").build();
         }
@@ -90,7 +90,5 @@ public class KafkaSampleResource {
             return Response.ok().entity("Received " + count + " messages").build();
 
         return Response.serverError().entity("Received " + count + " messages").build();
-
     }
-
 }
