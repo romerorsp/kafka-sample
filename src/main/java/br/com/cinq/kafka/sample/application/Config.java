@@ -13,9 +13,6 @@ import br.com.cinq.kafka.resource.KafkaSampleResource;
 import br.com.cinq.kafka.sample.Callback;
 import br.com.cinq.kafka.sample.Consumer;
 import br.com.cinq.kafka.sample.Producer;
-import br.com.cinq.kafka.sample.callback.MyCallback;
-import br.com.cinq.kafka.sample.kafka.BrokerConsumer;
-import br.com.cinq.kafka.sample.kafka.BrokerProducer;
 import br.com.cinq.kafka.sample.mono.QueueProducerConsumer;
 
 /**

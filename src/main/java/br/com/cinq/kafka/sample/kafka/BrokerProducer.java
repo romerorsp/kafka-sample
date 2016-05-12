@@ -67,18 +67,13 @@ public class BrokerProducer implements Producer {
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Kafka Producer [{}]", e.getMessage(), e);
         }
-
-        roundRobinCount += 1;
-        if (roundRobinCount >= partitions) {
-            roundRobinCount = 0;
-        }
-
+        roundRobinCount = (roundRobinCount+1)%partitions;
     }
 
     private KafkaProducer<String, String> getProducer() {
         if (producer == null) {
 
-        	logger.info("Connecting to {}", getBootstrapServer());
+            logger.info("Connecting to {}", getBootstrapServer());
 
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServer());
