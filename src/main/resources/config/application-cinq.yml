@@ -12,6 +12,6 @@ spring:
         database: MySQL
 
 broker:
-    bootstrapServer: arara:9092
+    bootstrapServer: vmteste007:9092
     producer:
         linger-time-ms: 0
