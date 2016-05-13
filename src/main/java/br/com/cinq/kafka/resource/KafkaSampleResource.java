@@ -124,9 +124,9 @@ public class KafkaSampleResource {
             for (int i = 0; i < repeat; i++) {
                 String payload = message.replace("{count}", "{" + i + "}");
                 if(!kafkaChannel.send(MessageBuilder.withPayload(payload).build())) {
-                    logger.warn(String.format("the Message [%s] was not sent...", payload));
+                    logger.debug(String.format("the Message [%s] was not sent...", payload));
                 } else {
-                    logger.warn(String.format("success: [%s]", payload));
+                    logger.debug(String.format("success: [%s]", payload));
                 }
             }
 

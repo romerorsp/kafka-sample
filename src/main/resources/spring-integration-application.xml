@@ -29,7 +29,7 @@
    <int-kafka:outbound-channel-adapter partition-id="2" kafka-template="kafkaTemplate" id="kafkaOutbound2" channel="toKafkaP3Channel" topic="${broker.topic}"/>
    <int-kafka:outbound-channel-adapter partition-id="3" kafka-template="kafkaTemplate" id="kafkaOutbound3" channel="toKafkaP4Channel" topic="${broker.topic}"/>
 
-   <int-kafka:message-driven-channel-adapter role="sik1" listener-container="kafkaListenerContainer" id="kafkaListener" auto-startup="true" phase="0" send-timeout="10000" channel="fromKafkaChannel" message-converter="messageConverter" error-channel="errorChannel" />
+   <int-kafka:message-driven-channel-adapter listener-container="kafkaListenerContainer" id="kafkaListener" auto-startup="true" phase="0" send-timeout="1000" channel="fromKafkaChannel" message-converter="messageConverter" error-channel="errorChannel" />
 
    <int:service-activator input-channel="fromKafkaChannel" ref="consumer" method="consume" />
 

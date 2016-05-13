@@ -12,7 +12,7 @@ public class KafkaPartitionerTransformer {
 
     public Message<String> roundRobbin(Message<String> message) {
         rr = (rr+1)%ROUND_ROBBIN_FACTOR;
-        System.out.println("HEADER FOR P" + rr);
+//        System.out.println("HEADER FOR P" + rr);
         return MessageBuilder.withPayload(message.getPayload().concat(" - P"+rr)).setHeader("partitionId", rr).build();
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.AbstractMessageListenerContainer;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer.AckMode;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.support.converter.MessageConverter;
 
@@ -111,13 +112,17 @@ public class KafkaConfig {
     @SuppressWarnings("unchecked")
     public AbstractMessageListenerContainer<String, String> kafkaListenerContainer() {
         ConsumerFactory<String, String> lcFactory = context.getBean(ConsumerFactory.class);
-        return new KafkaMessageListenerContainer<String, String>(lcFactory, topic);
+        KafkaMessageListenerContainer<String, String> listener = new KafkaMessageListenerContainer<String, String>(lcFactory, topic);
+        listener.setAckMode(AckMode.RECORD);
+        listener.setAutoStartup(true);
+        return listener;
     }
 
     @SuppressWarnings("unchecked")
     @Bean
-    public ConsumerFactory<Integer, String> consumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(context.getBean("consumerConfigs", Map.class));
+    public ConsumerFactory<String, String> consumerFactory() {
+        DefaultKafkaConsumerFactory<String, String> cf = new DefaultKafkaConsumerFactory<>(context.getBean("consumerConfigs", Map.class));
+        return cf;
     }
 
     @Bean
