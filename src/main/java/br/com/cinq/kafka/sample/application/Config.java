@@ -1,6 +1,8 @@
 package br.com.cinq.kafka.sample.application;
 
 
+import java.util.Properties;
+
 import javax.ws.rs.ApplicationPath;
 
 import org.I0Itec.zkclient.ZkClient;
@@ -87,18 +89,20 @@ public class Config extends ResourceConfig {
         // Create
         if (!AdminUtils.topicExists(utils, getTopic())) {
             // Easiest way to create a Topic programatically
-            //AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties());
+            AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties());
 
             // "Manual" assignment of partitions and brokers
-            Topic.validate(getTopic());
-            scala.collection.Seq<Object> brokerList = utils.getSortedBrokerList();
-            scala.collection.Map<Object, scala.collection.Seq<Object>> partitionReplicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, getPartitions(), 1,
-                    AdminUtils.assignReplicasToBrokers$default$4(), AdminUtils.assignReplicasToBrokers$default$5());
-            AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(utils, getTopic(), partitionReplicaAssignment,
-                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$4(),
-                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$5());
+//            Topic.validate(getTopic());
+//            scala.collection.Seq<Object> brokerList = utils.getSortedBrokerList();
+//            scala.collection.Map<Object, scala.collection.Seq<Object>> partitionReplicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, getPartitions(), 1,
+//                    AdminUtils.assignReplicasToBrokers$default$4(), AdminUtils.assignReplicasToBrokers$default$5());
+//            AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(utils, getTopic(), partitionReplicaAssignment,
+//                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$4(),
+//                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$5());
             logger.debug("Topic {} created", topic);
         }
+
+        utils.close();
         return utils;
     }
 

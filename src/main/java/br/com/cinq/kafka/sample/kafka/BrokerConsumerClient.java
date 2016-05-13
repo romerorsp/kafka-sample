@@ -76,15 +76,15 @@ public class BrokerConsumerClient implements Runnable {
         if (consumer == null) {
             consumer = new KafkaConsumer<>(properties);
 
-            List<TopicPartition> partitions = new ArrayList<TopicPartition>();
+            //List<TopicPartition> partitions = new ArrayList<TopicPartition>();
             //            for (PartitionInfo partition : consumer.partitionsFor(getTopic()))
             //                partitions.add(new TopicPartition(getTopic(), partition.partition()));
             //            consumer.assign(partitions);
 
-            // consumer.subscribe(Arrays.asList(getTopic() + "-" + i));
+            consumer.subscribe(Arrays.asList(getTopic()));
 
-            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
-            consumer.assign(Arrays.asList(partition));
+//            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
+//            consumer.assign(Arrays.asList(partition));
 
         }
         return consumer;
