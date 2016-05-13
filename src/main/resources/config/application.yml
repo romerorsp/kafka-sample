@@ -19,7 +19,7 @@ spring:
 
 broker:
     partitions: 10
-    replication-factor: 1
+    replication-factor: 0
     topic: kafka-sample
     session-timeout: 30000
     consumer:

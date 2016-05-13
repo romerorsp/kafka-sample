@@ -77,11 +77,19 @@ public class KafkaSampleResource {
         }
 
         // Check if all messages were received
-        long count = 0;
+        long count = -1;
+        long lastCount = 0;
         try {
-            Thread.sleep(30000);
+            Thread.sleep(3000);
+            if (dao.count() == 0) {
+                return Response.serverError().entity("No messages were received after timeout").build();
+            }
 
-            count = dao.count();
+            while (lastCount != count) {
+                count = dao.count();
+                Thread.sleep(3000);
+                lastCount = dao.count();
+            }
         } catch (Exception e) {
             return Response.serverError().entity("An exception occurred").build();
         }

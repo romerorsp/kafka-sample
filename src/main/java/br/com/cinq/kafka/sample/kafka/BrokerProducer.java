@@ -63,28 +63,6 @@ public class BrokerProducer implements Producer {
     /** Instance of the producer */
     private KafkaProducer<String, String> producer = null;
 
-    /**
-    * Send the message. The message must be serialized as string
-    */
-    @Override
-    public void send(String message) throws QueueException {
-        producer = getProducer();
-
-        try {
-            logger.debug("Sending message {} to [{} - {}]", getTopic(), roundRobinCount, message);
-
-            producer.send(new ProducerRecord<String, String>(getTopic(), roundRobinCount, null, message)).get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Kafka Producer [{}]", e.getMessage(), e);
-        }
-
-        roundRobinCount += 1;
-        if (roundRobinCount >= partitions) {
-            roundRobinCount = 0;
-        }
-
-    }
-
     private KafkaProducer<String, String> getProducer() {
         if (producer == null) {
 
@@ -99,6 +77,11 @@ public class BrokerProducer implements Producer {
             props.put("buffer.memory", getBufferMemory());
             props.put("key.serializer", StringSerializer.class.getName());
             props.put("value.serializer", StringSerializer.class.getName());
+            props.put("partitioner.class", BrokerProducerPartitioner.class.getName());
+
+            // For partitioner, not a valid setting for kafka
+            // this is faster then checking at Cluster
+            props.put("num.partitions", getPartitions());
 
             producer = new KafkaProducer<>(props);
 
@@ -160,6 +143,27 @@ public class BrokerProducer implements Producer {
 
     public void setZookeeper(String zookeeper) {
         this.zookeeper = zookeeper;
+    }
+
+    /**
+    * Send the message. The message must be serialized as string
+    */
+    @Override
+    public void send(String message) throws QueueException {
+        producer = getProducer();
+
+        try {
+            logger.debug("Sending message {} to [{} - {}]", getTopic(), roundRobinCount, message);
+
+            producer.send(new ProducerRecord<String, String>(getTopic(), roundRobinCount, null, message)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Kafka Producer [{}]", e.getMessage(), e);
+        }
+
+        roundRobinCount += 1;
+        if (roundRobinCount >= partitions) {
+            roundRobinCount = 0;
+        }
     }
 
 }

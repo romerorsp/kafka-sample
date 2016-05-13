@@ -12,7 +12,7 @@ spring:
         database: MySQL
 
 broker:
-    bootstrapServer: vmteste007:9092
-    zookeeper: vmteste007:2181
+    bootstrapServer: 192.168.226.212:9092
+    zookeeper: 192.168.226.212:2181
     producer:
         linger-time-ms: 0

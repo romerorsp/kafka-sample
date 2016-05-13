@@ -46,7 +46,7 @@ public class Config extends ResourceConfig {
     private int partitions;
 
     /** Replication Factor */
-    @Value("${broker.replication-factor:1}")
+    @Value("${broker.replication-factor:0}")
     private int replicationFactor;
 
     private QueueProducerConsumer testProducerConsumer;
