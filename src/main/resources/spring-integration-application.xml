@@ -9,11 +9,27 @@
 
    <int:channel id="fromKafkaChannel" />
    <int:publish-subscribe-channel id="toKafkaChannel"/>
+   <int:publish-subscribe-channel id="toKafkaP1Channel"/>
+   <int:publish-subscribe-channel id="toKafkaP2Channel"/>
+   <int:publish-subscribe-channel id="toKafkaP3Channel"/>
+   <int:publish-subscribe-channel id="toKafkaP4Channel"/>
+   <int:publish-subscribe-channel id="partitionedKafkaChannel"/>
+
+   <int:transformer input-channel="toKafkaChannel" output-channel="partitionedKafkaChannel" ref="partitioner" method="roundRobbin" />
 
 
-   <int-kafka:outbound-channel-adapter partition-id="3" kafka-template="kafkaTemplate" id="kafkaOutbound" channel="toKafkaChannel" topic="${broker.topic}"></int-kafka:outbound-channel-adapter>
+  <int:header-value-router input-channel="partitionedKafkaChannel" header-name="partitionId" default-output-channel="toKafkaP4Channel">
+     <int:mapping value="0" channel="toKafkaP1Channel" />
+     <int:mapping value="1" channel="toKafkaP2Channel" />
+     <int:mapping value="2" channel="toKafkaP3Channel" />
+  </int:header-value-router>
 
-   <int-kafka:message-driven-channel-adapter role="sik1" listener-container="kafkaListenerContainer" id="kafkaListener" auto-startup="true" phase="0" send-timeout="10000" channel="fromKafkaChannel" message-converter="messageConverter" error-channel="errorChannel" />
+   <int-kafka:outbound-channel-adapter partition-id="0" kafka-template="kafkaTemplate" id="kafkaOutbound0" channel="toKafkaP1Channel" topic="${broker.topic}" />
+   <int-kafka:outbound-channel-adapter partition-id="1" kafka-template="kafkaTemplate" id="kafkaOutbound1" channel="toKafkaP2Channel" topic="${broker.topic}"/>
+   <int-kafka:outbound-channel-adapter partition-id="2" kafka-template="kafkaTemplate" id="kafkaOutbound2" channel="toKafkaP3Channel" topic="${broker.topic}"/>
+   <int-kafka:outbound-channel-adapter partition-id="3" kafka-template="kafkaTemplate" id="kafkaOutbound3" channel="toKafkaP4Channel" topic="${broker.topic}"/>
+
+   <int-kafka:message-driven-channel-adapter listener-container="kafkaListenerContainer" id="kafkaListener" auto-startup="true" phase="0" send-timeout="10000" channel="fromKafkaChannel" message-converter="messageConverter" error-channel="errorChannel" />
 
    <int:service-activator input-channel="fromKafkaChannel" ref="consumer" method="consume" />
 

@@ -1,12 +1,18 @@
 spring:
     datasource:
         driver-class-name: org.h2.Driver
-        url: jdbc:h2:mem:sample;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;TRACE_LEVEL_SYSTEM_OUT=1;INIT=RUNSCRIPT from 'classpath:sql/db_init.sql'
+        url: jdbc:h2:mem:sample;MODE=MySQL;MVCC=true;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;TRACE_LEVEL_SYSTEM_OUT=1;INIT=RUNSCRIPT from 'classpath:sql/db_init.sql'
         username: dbuser
         password: dbuser
         max-wait: 1000
         max-active: 50
+        test-while-idle: true
         test-on-borrow: true
+        test-on-return: true
+        test-on-connect: true
+        validation-interval: 500
+        validation-query-timeout: 2000
+        validation-query: SELECT 1
     jpa:
         database-platform: org.hibernate.dialect.H2Dialect
 

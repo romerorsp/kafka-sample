@@ -108,9 +108,9 @@ public class KafkaSampleResource {
      * @return
      */
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
     @Path("/integration/{repeat}")
-    @Transactional(value=TxType.SUPPORTS)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional(value=TxType.REQUIRES_NEW)
     public Response sendSIBatch(@PathParam("repeat") int repeat, String message) {
         try {
             if(message == null || message.length() < 1) {
@@ -138,7 +138,7 @@ public class KafkaSampleResource {
         // Check if all messages were received
         long count = 0;
         try {
-            Thread.sleep(30000);
+            Thread.sleep(10000);
 
             count = dao.count();
         } catch (Exception e) {

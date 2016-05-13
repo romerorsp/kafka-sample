@@ -6,7 +6,7 @@ spring:
         type: filter
     jpa:
         openInView: false
-        show_sql: true
+        show-sql: true
         generate-ddl: false
         hibernate:
             ddl-auto: none

@@ -16,7 +16,6 @@
 
 package br.com.cinq.kafka.sample.kafka.consumer;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -25,9 +24,7 @@ import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.messaging.Message;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 
 /**
  * JSON Message converter - String on output, String or byte[] on input.
@@ -53,27 +50,28 @@ public class StringJsonMessageConverter extends MessagingMessageConverter {
 
     @Override
     protected Object extractAndConvertValue(ConsumerRecord<?, ?> record, Type type) {
-        JavaType javaType = TypeFactory.defaultInstance().constructType(type);
-        Object value = record.value();
-        if (value instanceof String) {
-            try {
-                return this.objectMapper.readValue((String) value, javaType);
-            }
-            catch (IOException e) {
-                throw new ConversionException("Failed to convert from JSON", e);
-            }
-        }
-        else if (value instanceof byte[]) {
-            try {
-                return this.objectMapper.readValue((byte[]) value, javaType);
-            }
-            catch (IOException e) {
-                throw new ConversionException("Failed to convert from JSON", e);
-            }
-        }
-        else {
-            throw new IllegalStateException("Only String or byte[] supported");
-        }
+//        JavaType javaType = TypeFactory.defaultInstance().constructType(type);
+//        Object value = record.value();
+//        if (value instanceof String) {
+//            try {
+//                return this.objectMapper.readValue((String) value, javaType);
+//            }
+//            catch (IOException e) {
+//                throw new ConversionException("Failed to convert from JSON", e);
+//            }
+//        }
+//        else if (value instanceof byte[]) {
+//            try {
+//                return this.objectMapper.readValue((byte[]) value, javaType);
+//            }
+//            catch (IOException e) {
+//                throw new ConversionException("Failed to convert from JSON", e);
+//            }
+//        }
+//        else {
+//            throw new IllegalStateException("Only String or byte[] supported");
+//        }
+        return record.value().toString().concat("|P" + record.partition());
     }
 
 }
