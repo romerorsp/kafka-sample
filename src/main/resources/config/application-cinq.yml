@@ -13,5 +13,6 @@ spring:
 
 broker:
     bootstrapServer: vmteste007:9092
+    zookeeper: vmteste007:2181
     producer:
         linger-time-ms: 0

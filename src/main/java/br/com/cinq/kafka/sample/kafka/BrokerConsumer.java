@@ -1,9 +1,8 @@
 package br.com.cinq.kafka.sample.kafka;
 
-import java.util.Arrays;
 import java.util.Properties;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Callback;
 import br.com.cinq.kafka.sample.Consumer;
+import kafka.utils.ZkUtils;
 
 /**
  * Implements the loop to receive messages and call back the user operations.
@@ -87,6 +87,10 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     */
     public void start() {
 
+        // This will enforce the creation of the topic with the number of partitions we want
+        context.getBean(ZkUtils.class);
+
+        // Configure consumers
     	logger.info("Connecting to {}", getBootstrapServer());
     	logger.info("Auto Commit set to {}", getEnableAutoCommit());
 
@@ -97,27 +101,25 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         if(getEnableAutoCommit())
         	props.put("auto.commit.interval.ms", getAutoCommitInterval());
         props.put("session.timeout.ms", getSessionTimeout());
-        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("key.deserializer", StringDeserializer.class.getName());
+        props.put("value.deserializer", StringDeserializer.class.getName());
 
         consumers = new Thread[getPartitions()];
 
         for (int i = 0; i < getPartitions(); i++) {
-            KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
-            consumer.subscribe(Arrays.asList(getTopic() + "-" + i));
-
-            //         TopicPartition partition = new TopicPartition(getTopic(), i);
-            //         consumer.assign(Arrays.asList(partition));
-
+            // Initialize client
             BrokerConsumerClient client = new BrokerConsumerClient();
+
             client.setEnableAutoCommit(getEnableAutoCommit());
+            client.setPartition(i);
+            client.setTopic(getTopic());
+            client.setProperties(props);
             if(callback==null) {
                 client.setCallback(context.getBean(Callback.class));
                 logger.debug(client.getCallback().toString());
             }
             else
                 client.setCallback(callback);
-            client.setConsumer(consumer);
 
             consumers[i] = new Thread(client);
             consumers[i].setName(getBootstrapServer() + ":" + i + ":" + Thread.currentThread().getId());

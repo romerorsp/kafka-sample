@@ -3,8 +3,11 @@ package br.com.cinq.kafka.sample.kafka;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,6 +17,9 @@ import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.exception.QueueException;
+import kafka.admin.AdminUtils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 
 /**
  * Implements the producer for Kafka.
@@ -33,7 +39,7 @@ public class BrokerProducer implements Producer {
     private String topic;
 
     /** Kafka server */
-    @Value("${broker.bootstrapServer:localhost\\:9092}")
+    @Value("${broker.bootstrapServer:localhost:9092}")
     private String bootstrapServer;
 
     /** Size of the package for sending messages */
@@ -48,6 +54,10 @@ public class BrokerProducer implements Producer {
     @Value("${broker.producer.buffer-size:33554432}")
     private int bufferMemory;
 
+    /** Zookeeper server, to manage topics and partitions */
+    @Value("${broker.zookeeper:localhost:2181}")
+    private String zookeeper;
+
     private int roundRobinCount = 0;
 
     /** Instance of the producer */
@@ -61,9 +71,9 @@ public class BrokerProducer implements Producer {
         producer = getProducer();
 
         try {
-            logger.debug("Sending message {} to [{}]", getTopic() + "-" + roundRobinCount, message);
+            logger.debug("Sending message {} to [{} - {}]", getTopic(), roundRobinCount, message);
 
-            producer.send(new ProducerRecord<String, String>(getTopic() + "-" + roundRobinCount, message)).get();
+            producer.send(new ProducerRecord<String, String>(getTopic(), roundRobinCount, null, message)).get();
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Kafka Producer [{}]", e.getMessage(), e);
         }
@@ -78,7 +88,7 @@ public class BrokerProducer implements Producer {
     private KafkaProducer<String, String> getProducer() {
         if (producer == null) {
 
-        	logger.info("Connecting to {}", getBootstrapServer());
+            logger.info("Connecting to {}", getBootstrapServer());
 
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServer());
@@ -87,10 +97,11 @@ public class BrokerProducer implements Producer {
             props.put("batch.size", getBatchSize());
             props.put("linger.ms", getLingerTime());
             props.put("buffer.memory", getBufferMemory());
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            props.put("key.serializer", StringSerializer.class.getName());
+            props.put("value.serializer", StringSerializer.class.getName());
 
             producer = new KafkaProducer<>(props);
+
         }
         return producer;
     }
@@ -141,6 +152,14 @@ public class BrokerProducer implements Producer {
 
     public void setPartitions(int partitions) {
         this.partitions = partitions;
+    }
+
+    public String getZookeeper() {
+        return zookeeper;
+    }
+
+    public void setZookeeper(String zookeeper) {
+        this.zookeeper = zookeeper;
     }
 
 }

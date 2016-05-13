@@ -1,5 +1,6 @@
 package br.com.cinq.kafka.resource;
 
+import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -12,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.transaction.annotation.Transactional;
 
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.repository.MessagesRepository;
@@ -59,7 +59,7 @@ public class KafkaSampleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{repeat}")
-    @Transactional(readOnly=true)
+    @Transactional(Transactional.TxType.SUPPORTS)
     public Response sendBatch(@PathParam("repeat") int repeat, String message) {
         try {
             logger.debug("Deleting all messages");
