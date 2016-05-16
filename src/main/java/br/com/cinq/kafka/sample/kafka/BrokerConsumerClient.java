@@ -1,16 +1,18 @@
 package br.com.cinq.kafka.sample.kafka;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.UUID;
 
 import org.apache.kafka.clients.consumer.CommitFailedException;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.RebalanceInProgressException;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
@@ -19,7 +21,7 @@ import org.slf4j.MDC;
 
 import br.com.cinq.kafka.sample.Callback;
 
-public class BrokerConsumerClient implements Runnable {
+public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener {
     Logger logger = LoggerFactory.getLogger(BrokerConsumerClient.class);
 
     private KafkaConsumer<String, String> consumer;
@@ -50,6 +52,8 @@ public class BrokerConsumerClient implements Runnable {
                                 record.value());
                         count++;
                         callback.receive(record.value());
+
+                        BrokerConsumer.getOffsets().put(new TopicPartition(record.topic(),record.partition()), record.offset());
                     }
                     logger.info("tid {} processed {} messages",Thread.currentThread().getName(), count);
                 }
@@ -57,14 +61,37 @@ public class BrokerConsumerClient implements Runnable {
                     try {
                         getConsumer().commitSync();
                     } catch (CommitFailedException e) {
-                        logger.warn("Commit failed!!! {}", e.getMessage(), e);
+                        // You WILL get exceptions due to rebalance, from time to time in clustered
+                        // environments.
+                        // It is up to you the deal with these situations.
+                        // Our Callback.receive() is transactional, but you end up in situations
+                        // that you will have to implement two-phase commit to recover from this failure.
+                        // After you receive an error during kafka commit either rollback database transaction
+                        // OR ignore kafka and seek() the offsets like we did in the example.
+                        // Problem is, other nodes in the cluster WILL receive the messages you didn't
+                        // commit during rebalance, so if you choose not using two phase commit and
+                        // rollback eventual database transactions, you will
+                        // have to deal with duplicates.
+                        // Another approach is to commitSync() right after poll(). In that case, you
+                        // could only update the offsets for the messages were processed. In case of commit failure,
+                        // you just IGNORE the messages received, hoping that the other node in the cluster
+                        // receives the messages :-o
+                        logger.debug("Commit failed!!! {}", e.getMessage(),e);
+
+                        // Just ignore Kafka, life goes on
+                        for(Entry<TopicPartition, Long> entry : BrokerConsumer.getOffsets().entrySet()) {
+                            consumer.seek(entry.getKey(), entry.getValue());
+                        }
                     }
                 }
             }
         } catch (TimeoutException e) {
             logger.warn("TimeoutException", e);
         } catch (WakeupException e) {
+            // In this situation it would be better to restart the loop
             logger.warn("Wake up exception", e);
+        } catch(RebalanceInProgressException e) {
+            logger.warn("Rebalance In Progress", e);
         } finally {
             MDC.remove(consumer.toString());
         }
@@ -86,6 +113,7 @@ public class BrokerConsumerClient implements Runnable {
 
             consumer.subscribe(Arrays.asList(getTopic()));
 
+            // This will cause the
 //            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
 //            consumer.assign(Arrays.asList(partition));
 
@@ -137,4 +165,19 @@ public class BrokerConsumerClient implements Runnable {
         this.partition = partition;
     }
 
+    @Override
+    public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+        logger.warn("Paritions revoked from this node during rebalancing:");
+        for(TopicPartition partition : partitions) {
+            logger.warn("Revoked from this node {}", partition.toString());
+        }
+    }
+
+    @Override
+    public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+        logger.warn("Paritions assigned to this node during rebalancing:");
+        for(TopicPartition partition : partitions) {
+            logger.warn("Rebalanced to this node {}", partition.toString());
+        }
+    }
 }

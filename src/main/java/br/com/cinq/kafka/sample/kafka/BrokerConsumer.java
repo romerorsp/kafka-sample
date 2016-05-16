@@ -1,7 +1,12 @@
 package br.com.cinq.kafka.sample.kafka;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.BlockingDeque;
 
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +32,11 @@ import kafka.utils.ZkUtils;
 @Qualifier("sampleConsumer")
 public class BrokerConsumer implements Consumer, DisposableBean, InitializingBean, ApplicationContextAware {
 
-	static Logger logger = LoggerFactory.getLogger(BrokerConsumer.class);
+    static Logger logger = LoggerFactory.getLogger(BrokerConsumer.class);
 
     public static String TXID = "txid";
+
+    private static Map<TopicPartition, Long> offsets;
 
     ApplicationContext context;
 
@@ -91,15 +98,15 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         context.getBean(ZkUtils.class);
 
         // Configure consumers
-    	logger.info("Connecting to {}", getBootstrapServer());
-    	logger.info("Auto Commit set to {}", getEnableAutoCommit());
+        logger.info("Connecting to {}", getBootstrapServer());
+        logger.info("Auto Commit set to {}", getEnableAutoCommit());
 
         Properties props = new Properties();
         props.put("bootstrap.servers", getBootstrapServer());
         props.put("group.id", getGroupId());
         props.put("enable.auto.commit", getEnableAutoCommit());
-        if(getEnableAutoCommit())
-        	props.put("auto.commit.interval.ms", getAutoCommitInterval());
+        if (getEnableAutoCommit())
+            props.put("auto.commit.interval.ms", getAutoCommitInterval());
         props.put("session.timeout.ms", getSessionTimeout());
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
@@ -114,11 +121,10 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
             client.setPartition(i);
             client.setTopic(getTopic());
             client.setProperties(props);
-            if(callback==null) {
+            if (callback == null) {
                 client.setCallback(context.getBean(Callback.class));
                 logger.debug(client.getCallback().toString());
-            }
-            else
+            } else
                 client.setCallback(callback);
 
             consumers[i] = new Thread(client);
@@ -184,13 +190,26 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         this.sessionTimeout = sessionTimeout;
     }
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		start();
-	}
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        start();
+    }
 
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {
         this.context = context;
+    }
+
+    public static Map<TopicPartition, Long> getOffsets() {
+        // IRL use persistence of offsets to KafkaConsumser.seek() when booting the
+        // application. Persistence could be database, distributed memory caching, etc
+        if (offsets == null) {
+            offsets = Collections.synchronizedMap(new HashMap<TopicPartition, Long>());
+        }
+        return offsets;
+    }
+
+    public static void setOffsets(Map<TopicPartition, Long> offsets) {
+        BrokerConsumer.offsets = offsets;
     }
 }

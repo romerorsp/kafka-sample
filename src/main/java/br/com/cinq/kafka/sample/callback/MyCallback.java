@@ -2,7 +2,6 @@ package br.com.cinq.kafka.sample.callback;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
-import javax.transaction.Transaction;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
@@ -34,17 +33,11 @@ public class MyCallback implements Callback {
         EntityTransaction trn = null;
         try {
             Message entity = new Message();
-//            entity.setMessage(message);
-//            trn = em.getTransaction();
-//            trn.begin();
+            entity.setMessage(message);
             dao.save(entity);
-//            trn.commit();
-//            trn = null;
         } catch (Exception e) {
-            logger.error("Couldn't insert a message",e);
+            logger.error("Couldn't insert a message", e);
         } finally {
-//            if (trn != null)
-//                trn.rollback();
         }
     }
 }
