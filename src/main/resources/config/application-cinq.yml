@@ -14,7 +14,7 @@ spring:
 broker:
     bootstrapServer: vmteste007:9092
     zookeeperServer: vmteste007:2181
-    partitions: 2
+    partitions: 4
     topic: partitionedTopic
     group-id: sik1
     producer:
