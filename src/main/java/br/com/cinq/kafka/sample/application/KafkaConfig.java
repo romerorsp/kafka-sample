@@ -48,10 +48,13 @@ public class KafkaConfig {
     private int maxIdle;
 
     @Value("${broker.consumer.auto-commit-interval:1000}")
-    private int autoCommitInterval = 1000;
+    private int autoCommitInterval;
 
-    @Value("${broker.session-timeout}")
-    private int sessionTimeout = 30000;
+    @Value("${broker.consumer.session-timeout}")
+    private int sessionTimeout;
+
+    @Value("${broker.consumer.request-timeout}")
+    private int requestTimeout;
 
     @Value("${broker.producer.batch-size:16384}")
     private int batchSize;
@@ -140,6 +143,7 @@ public class KafkaConfig {
         if(enableAutoCommit) {
             props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, autoCommitInterval);
         }
+        props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeout);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeout);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
