@@ -59,7 +59,7 @@ public class KafkaSampleResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{repeat}")
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public Response sendBatch(@PathParam("repeat") int repeat, String message) {
         try {
             logger.debug("Deleting all messages");

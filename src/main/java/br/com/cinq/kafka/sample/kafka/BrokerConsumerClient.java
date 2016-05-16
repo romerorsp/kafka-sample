@@ -44,11 +44,14 @@ public class BrokerConsumerClient implements Runnable {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Integer.MAX_VALUE);
                 if (records != null) {
+                    int count=0;
                     for (ConsumerRecord<String, String> record : records) {
                         logger.debug("tid {}, offset = {}, key = {}, value = {}", Thread.currentThread().getName(), record.offset(), record.key(),
                                 record.value());
+                        count++;
                         callback.receive(record.value());
                     }
+                    logger.info("tid {} processed {} messages",Thread.currentThread().getName(), count);
                 }
                 if (!isEnableAutoCommit()) {
                     try {
