@@ -22,6 +22,7 @@
      <int:mapping value="0" channel="toKafkaP1Channel" />
      <int:mapping value="1" channel="toKafkaP2Channel" />
      <int:mapping value="2" channel="toKafkaP3Channel" />
+     <int:mapping value="3" channel="toKafkaP4Channel" />
   </int:header-value-router>
 
    <int-kafka:outbound-channel-adapter partition-id="0" kafka-template="kafkaTemplate" id="kafkaOutbound0" channel="toKafkaP1Channel" topic="${broker.topic}" />

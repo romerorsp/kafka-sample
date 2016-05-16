@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 @Component(value="partitioner")
 public class KafkaPartitionerTransformer {
 
-    private static int rr = -1;
-    private static final int ROUND_ROBBIN_FACTOR = 3;
+    private static volatile int rr = -1;
+    private static final int ROUND_ROBBIN_FACTOR = 4;
 
     public Message<String> roundRobbin(Message<String> message) {
         rr = (rr+1)%ROUND_ROBBIN_FACTOR;

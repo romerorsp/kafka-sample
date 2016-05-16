@@ -143,13 +143,12 @@ public class KafkaConfig {
         if(enableAutoCommit) {
             props.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, autoCommitInterval);
         }
-        props.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 512);
         props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 500);
         props.put(ConsumerConfig.SEND_BUFFER_CONFIG, 512);
-        props.put("max.partition.fetch.bytes", 512);
-        props.put("auto.offset.reset", "latest");
-        props.put("auto.offset.reset", "latest");
-//        props.put("partition.assignment.strategy", "roundrobin");
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 512);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+        props.put(ConsumerConfig.RECEIVE_BUFFER_CONFIG, 512);
+
         props.put(ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeout);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, sessionTimeout);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
