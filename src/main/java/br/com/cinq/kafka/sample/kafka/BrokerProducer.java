@@ -58,8 +58,6 @@ public class BrokerProducer implements Producer {
     @Value("${broker.zookeeper:localhost:2181}")
     private String zookeeper;
 
-    private int roundRobinCount = 0;
-
     /** Instance of the producer */
     private KafkaProducer<String, String> producer = null;
 
@@ -77,11 +75,12 @@ public class BrokerProducer implements Producer {
             props.put("buffer.memory", getBufferMemory());
             props.put("key.serializer", StringSerializer.class.getName());
             props.put("value.serializer", StringSerializer.class.getName());
-            props.put("partitioner.class", BrokerProducerPartitioner.class.getName());
 
             // For partitioner, not a valid setting for kafka
             // this is faster then checking at Cluster
-            props.put("num.partitions", getPartitions());
+            // Kafka already have a default partitioner
+            //props.put("partitioner.class", BrokerProducerPartitioner.class.getName());
+            //props.put("num.partitions", getPartitions());
 
             producer = new KafkaProducer<>(props);
 
@@ -153,16 +152,11 @@ public class BrokerProducer implements Producer {
         producer = getProducer();
 
         try {
-            logger.debug("Sending message {} to [{} - {}]", getTopic(), roundRobinCount, message);
+            logger.debug("Sending message {} to [{}]", getTopic(), message);
 
-            producer.send(new ProducerRecord<String, String>(getTopic(), roundRobinCount, null, message)).get();
+            producer.send(new ProducerRecord<String, String>(getTopic(), message)).get();
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Kafka Producer [{}]", e.getMessage(), e);
-        }
-
-        roundRobinCount += 1;
-        if (roundRobinCount >= partitions) {
-            roundRobinCount = 0;
         }
     }
 

@@ -128,7 +128,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
                 client.setCallback(callback);
 
             consumers[i] = new Thread(client);
-            consumers[i].setName(getBootstrapServer() + ":" + i + ":" + Thread.currentThread().getId());
+            consumers[i].setName(getBootstrapServer() + ":" + i + ":" + consumers[i].getId());
             consumers[i].start();
         }
     }
