@@ -68,6 +68,14 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.session-timeout}")
     private int sessionTimeout = 30000;
 
+    /** rebalance.max.retries*/
+    @Value("${broker.consumer.rebalanceMaxRetries:4}")
+    private int rebalanceMaxRetries;
+
+    /** rebalance.backoff.ms */
+    @Value("${broker.consumer.rebalanceBackoff:2000}")
+    private int rebalanceBackoff;
+
     private Callback callback;
 
     /** List of consumers */
@@ -110,6 +118,8 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         props.put("session.timeout.ms", getSessionTimeout());
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
+        props.put("rebalance.max.retries", getRebalanceMaxRetries());
+        props.put("rebalance.backoff.ms", getRebalanceBackoff());
 
         consumers = new Thread[getPartitions()];
 
@@ -211,5 +221,21 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     public static void setOffsets(Map<TopicPartition, Long> offsets) {
         BrokerConsumer.offsets = offsets;
+    }
+
+    public int getRebalanceMaxRetries() {
+        return rebalanceMaxRetries;
+    }
+
+    public void setRebalanceMaxRetries(int rebalanceMaxRetries) {
+        this.rebalanceMaxRetries = rebalanceMaxRetries;
+    }
+
+    public int getRebalanceBackoff() {
+        return rebalanceBackoff;
+    }
+
+    public void setRebalanceBackoff(int rebalanceBackoff) {
+        this.rebalanceBackoff = rebalanceBackoff;
     }
 }
