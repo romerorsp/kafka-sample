@@ -79,6 +79,7 @@ public class Config extends ResourceConfig {
     }
 
     @Bean
+    @Profile("!unit")
     public ZkUtils createOrUpdateTopic() {
         logger.debug("Creating topic {} with replication {} and {} partitions", topic, getReplicationFactor(), partitions);
 
@@ -91,7 +92,7 @@ public class Config extends ResourceConfig {
             // Easiest way to create a Topic programatically
             AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties());
 
-            // "Manual" assignment of partitions and brokers, may cause problems 
+            // "Manual" assignment of partitions and brokers, may cause problems
 //            Topic.validate(getTopic());
 //            scala.collection.Seq<Object> brokerList = utils.getSortedBrokerList();
 //            scala.collection.Map<Object, scala.collection.Seq<Object>> partitionReplicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, getPartitions(), 1,
