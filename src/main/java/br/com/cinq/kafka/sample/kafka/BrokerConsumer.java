@@ -133,6 +133,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 //        props.put("rebalance.backoff.ms", getRebalanceBackoff());
         props.put("max.partition.fetch.bytes", getMaxPartitionFetchBytes());
         props.put("receive.buffer.bytes", getReceiveBufferBytes());
+        props.put("auto.offset.reset", "latest"); // end
 
         consumers = new Thread[getPartitions()];
 
