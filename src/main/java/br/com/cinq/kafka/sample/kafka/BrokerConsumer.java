@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.BlockingDeque;
 
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -76,6 +75,18 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.consumer.rebalanceBackoff:2000}")
     private int rebalanceBackoff;
 
+    /** Commit right after retrieving messages from Kafka. */
+    @Value("${broker.consumer.commitBeforeProcessing:false}")
+    private boolean commitBeforeProcessing;
+
+    /** max.partition.fetch.bytes */
+    @Value("${broker.consumer.maxPartitionFetchBytes:10240}")
+    private int maxPartitionFetchBytes;
+
+    /**receive.buffer.bytes */
+    @Value("${broker.consumer.receiveBufferBytes:32768}")
+    private int receiveBufferBytes;
+
     private Callback callback;
 
     /** List of consumers */
@@ -118,8 +129,10 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         props.put("session.timeout.ms", getSessionTimeout());
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
-        props.put("rebalance.max.retries", getRebalanceMaxRetries());
-        props.put("rebalance.backoff.ms", getRebalanceBackoff());
+//        props.put("rebalance.max.retries", getRebalanceMaxRetries()); Not supported on org.apache
+//        props.put("rebalance.backoff.ms", getRebalanceBackoff());
+        props.put("max.partition.fetch.bytes", getMaxPartitionFetchBytes());
+        props.put("receive.buffer.bytes", getReceiveBufferBytes());
 
         consumers = new Thread[getPartitions()];
 
@@ -130,6 +143,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
             client.setEnableAutoCommit(getEnableAutoCommit());
             client.setPartition(i);
             client.setTopic(getTopic());
+            client.setCommitBeforeProcessing(getCommitBeforeProcessing());
             client.setProperties(props);
             if (callback == null) {
                 client.setCallback(context.getBean(Callback.class));
@@ -237,5 +251,29 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     public void setRebalanceBackoff(int rebalanceBackoff) {
         this.rebalanceBackoff = rebalanceBackoff;
+    }
+
+    public boolean getCommitBeforeProcessing() {
+        return commitBeforeProcessing;
+    }
+
+    public void setCommitBeforeProcessing(boolean commitBeforeProcessing) {
+        this.commitBeforeProcessing = commitBeforeProcessing;
+    }
+
+    public int getMaxPartitionFetchBytes() {
+        return maxPartitionFetchBytes;
+    }
+
+    public void setMaxPartitionFetchBytes(int maxPartitionFetchBytes) {
+        this.maxPartitionFetchBytes = maxPartitionFetchBytes;
+    }
+
+    public int getReceiveBufferBytes() {
+        return receiveBufferBytes;
+    }
+
+    public void setReceiveBufferBytes(int receiveBufferBytes) {
+        this.receiveBufferBytes = receiveBufferBytes;
     }
 }

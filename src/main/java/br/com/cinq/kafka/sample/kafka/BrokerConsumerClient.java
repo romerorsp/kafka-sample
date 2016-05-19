@@ -2,7 +2,6 @@ package br.com.cinq.kafka.sample.kafka;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -36,6 +35,8 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
 
     private int partition;
 
+    private boolean commitBeforeProcessing;
+
     @Override
     public void run() {
 
@@ -46,18 +47,32 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Integer.MAX_VALUE);
                 if (records != null) {
-                    int count=0;
+
+                    // Commit right after processing messages. In case of commit failure,
+                    // you just IGNORE the messages received, hoping that the other node in the cluster
+                    // receives them
+                    if (!isEnableAutoCommit() && isCommitBeforeProcessing()) {
+                        try {
+                            getConsumer().commitSync();
+                        } catch (CommitFailedException e) {
+                            logger.debug("Commit failed!!! {}", e.getMessage(), e);
+
+                            seekPartitionsToEnd();
+                        }
+                    }
+
+                    int count = 0;
                     for (ConsumerRecord<String, String> record : records) {
                         logger.debug("tid {}, offset = {}, key = {}, value = {}", Thread.currentThread().getName(), record.offset(), record.key(),
                                 record.value());
                         count++;
                         callback.receive(record.value());
 
-                        BrokerConsumer.getOffsets().put(new TopicPartition(record.topic(),record.partition()), record.offset());
+                        BrokerConsumer.getOffsets().put(new TopicPartition(record.topic(), record.partition()), record.offset());
                     }
-                    logger.info("tid {} processed {} messages",Thread.currentThread().getName(), count);
+                    logger.info("tid {} processed {} messages", Thread.currentThread().getName(), count);
                 }
-                if (!isEnableAutoCommit()) {
+                if (!isEnableAutoCommit() && !isCommitBeforeProcessing()) {
                     try {
                         getConsumer().commitSync();
                     } catch (CommitFailedException e) {
@@ -73,15 +88,12 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
                         // rollback eventual database transactions, you will
                         // have to deal with duplicates.
                         // Another approach is to commitSync() right after poll(). In that case, you
-                        // could only update the offsets for the messages were processed. In case of commit failure,
+                        // should update the offsets after the messages are processed. In case of commit failure,
                         // you just IGNORE the messages received, hoping that the other node in the cluster
                         // receives the messages :-o
-                        logger.debug("Commit failed!!! {}", e.getMessage(),e);
+                        logger.debug("Commit failed!!! {}", e.getMessage(), e);
 
-                        // Just ignore Kafka, life goes on
-                        for(Entry<TopicPartition, Long> entry : BrokerConsumer.getOffsets().entrySet()) {
-                            consumer.seek(entry.getKey(), entry.getValue());
-                        }
+                        seekPartitionsToEnd();
                     }
                 }
             }
@@ -90,10 +102,22 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
         } catch (WakeupException e) {
             // In this situation it would be better to restart the loop
             logger.warn("Wake up exception", e);
-        } catch(RebalanceInProgressException e) {
+        } catch (RebalanceInProgressException e) {
             logger.warn("Rebalance In Progress", e);
         } finally {
             MDC.remove(consumer.toString());
+        }
+    }
+
+    private void seekPartitionsToEnd() {
+        if (BrokerConsumer.getOffsets() != null) {
+            TopicPartition[] partitions = BrokerConsumer.getOffsets().keySet().toArray(new TopicPartition[0]);
+
+            try {
+                consumer.seekToEnd(partitions);
+            } catch (IllegalStateException e) {
+                logger.debug("{}", e.getMessage(), e);
+            }
         }
     }
 
@@ -114,8 +138,8 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
             consumer.subscribe(Arrays.asList(getTopic()));
 
             // This will cause the
-//            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
-//            consumer.assign(Arrays.asList(partition));
+            //            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
+            //            consumer.assign(Arrays.asList(partition));
 
         }
         return consumer;
@@ -168,7 +192,7 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         logger.warn("Paritions revoked from this node during rebalancing:");
-        for(TopicPartition partition : partitions) {
+        for (TopicPartition partition : partitions) {
             logger.warn("Revoked from this node {}", partition.toString());
         }
     }
@@ -176,8 +200,16 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
         logger.warn("Paritions assigned to this node during rebalancing:");
-        for(TopicPartition partition : partitions) {
+        for (TopicPartition partition : partitions) {
             logger.warn("Rebalanced to this node {}", partition.toString());
         }
+    }
+
+    public boolean isCommitBeforeProcessing() {
+        return commitBeforeProcessing;
+    }
+
+    public void setCommitBeforeProcessing(boolean commitBeforeProcessing) {
+        this.commitBeforeProcessing = commitBeforeProcessing;
     }
 }

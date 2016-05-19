@@ -3,8 +3,6 @@ package br.com.cinq.kafka.sample.kafka;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -17,9 +15,6 @@ import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.exception.QueueException;
-import kafka.admin.AdminUtils;
-import kafka.utils.ZKStringSerializer$;
-import kafka.utils.ZkUtils;
 
 /**
  * Implements the producer for Kafka.
@@ -159,5 +154,4 @@ public class BrokerProducer implements Producer {
             logger.warn("Kafka Producer [{}]", e.getMessage(), e);
         }
     }
-
 }
