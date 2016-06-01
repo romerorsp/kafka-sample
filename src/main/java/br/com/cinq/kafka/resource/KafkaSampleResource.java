@@ -2,9 +2,11 @@ package br.com.cinq.kafka.resource;
 
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -14,12 +16,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import br.com.cinq.kafka.sample.Consumer;
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.repository.MessagesRepository;
 
 /**
- * Greet Service
- *
+ * Resource to send messages.
  * @author Adriano Kretschmer
  */
 @Path("/kafka")
@@ -30,6 +32,10 @@ public class KafkaSampleResource {
     @Autowired
     @Qualifier("sampleProducer")
     Producer sampleProducer;
+
+    @Autowired
+    @Qualifier("sampleConsumer")
+    Consumer sampleConsumer;
 
     @Autowired
     MessagesRepository dao;
@@ -43,7 +49,7 @@ public class KafkaSampleResource {
             sampleProducer.send(message);
 
         } catch (Exception e) {
-            logger.error("An exception occurred during Greet message update", e);
+            logger.error("An exception occurred while sending a message", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("exception").build();
         }
 
@@ -51,7 +57,8 @@ public class KafkaSampleResource {
     }
 
     /**
-     * Simulates a load of messages, check if Kafka received and delivered them all
+     * Simulates a load of messages, check if Kafka received and delivered them all. IRL Transactions should be
+     * managed by a facade / Model class
      * @param repeat Number of repetitions
      * @param message A messages. Add a placeholder {count} in the payload, it will be replaced by the unit number.
      * @return
@@ -72,7 +79,7 @@ public class KafkaSampleResource {
             }
 
         } catch (Exception e) {
-            logger.error("An exception occurred during Greet message update", e);
+            logger.error("An exception occurred while sending messages", e);
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("exception").build();
         }
 
@@ -99,4 +106,22 @@ public class KafkaSampleResource {
 
         return Response.serverError().entity("Received " + count + " messages").build();
     }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/start")
+    public Response startConsumer() {
+        try {
+            logger.info("Starting consumers");
+
+            sampleConsumer.start();
+
+        } catch (Exception e) {
+            logger.error("An exception occurred while starting consumers", e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity("exception").build();
+        }
+
+        return Response.ok().build();
+    }
+
 }

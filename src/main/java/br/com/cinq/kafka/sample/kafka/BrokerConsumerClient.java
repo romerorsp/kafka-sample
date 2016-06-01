@@ -43,6 +43,9 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
         UUID uuid = UUID.randomUUID();
         MDC.put(getConsumer().toString(), uuid.toString());
 
+        // By enabling this, you ignore whatever message that wasn't processed
+        // seekPartitionsToEnd();
+
         try {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Integer.MAX_VALUE);

@@ -2,6 +2,8 @@ package br.com.cinq.kafka.sample.kafka;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -87,10 +89,13 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.consumer.receiveBufferBytes:32768}")
     private int receiveBufferBytes;
 
+    @Value("${broker.consumer.start:true}")
+    private boolean automaticStart = true;
+
     private Callback callback;
 
     /** List of consumers */
-    Thread consumers[];
+    private static List<Thread> consumers = new LinkedList<>();
 
     public int getPartitions() {
         return partitions;
@@ -116,6 +121,10 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         // This will enforce the creation of the topic with the number of partitions we want
         context.getBean(ZkUtils.class);
 
+        if(!isAutomaticStart())
+            return;
+
+
         // Configure consumers
         logger.info("Connecting to {}", getBootstrapServer());
         logger.info("Auto Commit set to {}", getEnableAutoCommit());
@@ -129,13 +138,11 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         props.put("session.timeout.ms", getSessionTimeout());
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
-//        props.put("rebalance.max.retries", getRebalanceMaxRetries()); Not supported on org.apache
-//        props.put("rebalance.backoff.ms", getRebalanceBackoff());
+        //        props.put("rebalance.max.retries", getRebalanceMaxRetries()); Not supported on org.apache
+        //        props.put("rebalance.backoff.ms", getRebalanceBackoff());
         props.put("max.partition.fetch.bytes", getMaxPartitionFetchBytes());
         props.put("receive.buffer.bytes", getReceiveBufferBytes());
         props.put("auto.offset.reset", "latest"); // end
-
-        consumers = new Thread[getPartitions()];
 
         for (int i = 0; i < getPartitions(); i++) {
             // Initialize client
@@ -152,9 +159,10 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
             } else
                 client.setCallback(callback);
 
-            consumers[i] = new Thread(client);
-            consumers[i].setName(getBootstrapServer() + ":" + i + ":" + consumers[i].getId());
-            consumers[i].start();
+            Thread consumerClient = new Thread(client);
+            consumerClient.setName(getBootstrapServer() + ":" + i + ":" + consumerClient.getId());
+            consumerClient.start();
+            consumers.add(consumerClient);
         }
     }
 
@@ -188,6 +196,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
             for (Thread t : consumers) {
                 t.interrupt();
             }
+            consumers.clear();
         }
     }
 
@@ -276,5 +285,13 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     public void setReceiveBufferBytes(int receiveBufferBytes) {
         this.receiveBufferBytes = receiveBufferBytes;
+    }
+
+    public boolean isAutomaticStart() {
+        return automaticStart;
+    }
+
+    public void setAutomaticStart(boolean automaticStart) {
+        this.automaticStart = automaticStart;
     }
 }
