@@ -34,7 +34,7 @@ public class BrokerProducer implements Producer {
     private String topic;
 
     /** Kafka server */
-    @Value("${broker.bootstrapServer:localhost:9092}")
+    @Value("${broker.producer.bootstrapServer:localhost:9092}")
     private String bootstrapServer;
 
     /** Size of the package for sending messages */

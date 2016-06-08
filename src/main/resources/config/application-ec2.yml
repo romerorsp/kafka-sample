@@ -14,7 +14,9 @@ spring:
         database: H2
 
 broker:
-    bootstrapServer: ec2-52-91-88-55.compute-1.amazonaws.com:9092
     zookeeper: ec2-52-91-88-55.compute-1.amazonaws.com:2181
     producer:
+        bootstrapServer: ec2-52-91-88-55.compute-1.amazonaws.com:9092
         linger-time-ms: 0
+    consumer:
+        bootstrapServer: ec2-52-91-88-55.compute-1.amazonaws.com:9092

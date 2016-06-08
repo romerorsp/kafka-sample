@@ -50,7 +50,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     private String topic;
 
     /** Kafka server */
-    @Value("${broker.bootstrapServer:localhost\\:9092}")
+    @Value("${broker.consumer.bootstrapServer:localhost\\:9092}")
     private String bootstrapServer;
 
     /** Group Id */
