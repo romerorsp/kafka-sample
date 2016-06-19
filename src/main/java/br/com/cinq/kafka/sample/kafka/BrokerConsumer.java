@@ -92,6 +92,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.consumer.start:true}")
     private boolean automaticStart = true;
 
+    
     private Callback callback;
 
     /** List of consumers */

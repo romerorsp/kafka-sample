@@ -22,6 +22,7 @@ INSERT INTO `Person` (name, birth, notes) VALUES('Thomas Jefferson','1801-03-04'
 CREATE TABLE IF NOT EXISTS `Messages` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `message` TEXT,
+    `created` DATETIME,
     PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 

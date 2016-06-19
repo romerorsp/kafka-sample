@@ -1,5 +1,8 @@
 package br.com.cinq.kafka.sample.callback;
 
+import java.sql.Timestamp;
+import java.util.Date;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.transaction.Transactional;
@@ -34,6 +37,7 @@ public class MyCallback implements Callback {
         try {
             Message entity = new Message();
             entity.setMessage(message);
+            entity.setCreated(new Timestamp(System.currentTimeMillis()));
             dao.save(entity);
         } catch (Exception e) {
             logger.error("Couldn't insert a message", e);

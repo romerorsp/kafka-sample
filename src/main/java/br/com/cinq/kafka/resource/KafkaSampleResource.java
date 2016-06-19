@@ -1,5 +1,7 @@
 package br.com.cinq.kafka.resource;
 
+import java.sql.Timestamp;
+
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -68,15 +70,18 @@ public class KafkaSampleResource {
     @Path("/{repeat}")
     @Transactional(Transactional.TxType.REQUIRES_NEW)
     public Response sendBatch(@PathParam("repeat") int repeat, String message) {
+    	long producerEnd, producerStart;
         try {
             logger.debug("Deleting all messages");
             dao.deleteAll();
 
             logger.info("Sending message - repeat {} {}", message, repeat);
 
+            producerStart = System.currentTimeMillis();
             for (int i = 0; i < repeat; i++) {
                 sampleProducer.send(message.replace("{count}", "{" + i + "}"));
             }
+            producerEnd = System.currentTimeMillis();
 
         } catch (Exception e) {
             logger.error("An exception occurred while sending messages", e);
@@ -101,10 +106,18 @@ public class KafkaSampleResource {
             return Response.serverError().entity("An exception occurred").build();
         }
 
-        if (count == repeat)
-            return Response.ok().entity("Received " + count + " messages").build();
+        Timestamp consumerStart = dao.findFirstCreated();
+        Timestamp consumerEnd = dao.findLastCreated();
 
-        return Response.serverError().entity("Received " + count + " messages").build();
+        StringBuffer sb = new StringBuffer();
+        sb.append(String.format("Producer : %d ms\n", producerEnd - producerStart));
+        sb.append(String.format("Consumer : %d ms\n", consumerEnd.getTime() - consumerStart.getTime()));
+        sb.append(String.format("Received %d messages", count));
+
+        if (count == repeat)
+            return Response.ok().entity(sb.toString()).build();
+
+        return Response.serverError().entity(sb.toString()).build();
     }
 
     @GET

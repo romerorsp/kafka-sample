@@ -1,8 +1,10 @@
 package br.com.cinq.kafka.repository.test;
 
-import java.util.List;
+import java.sql.Timestamp;
+import java.util.Date;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import br.com.cinq.kafka.sample.application.Application;
 import br.com.cinq.kafka.sample.entity.Message;
-import br.com.cinq.kafka.sample.entity.Person;
 import br.com.cinq.kafka.sample.repository.MessagesRepository;
-import br.com.cinq.kafka.sample.repository.PersonRepository;
 
 /**
  * Eye candy: implements a sample in using JpaRespositories
@@ -31,6 +31,11 @@ public class MessageRepositoryTest {
     @Autowired
     private MessagesRepository dao;
 
+    @Before
+    public void setUp() {
+    	dao.deleteAll();
+    }
+    
     @Test
     public void testInsertMessages() {
 
@@ -39,6 +44,7 @@ public class MessageRepositoryTest {
         for(int i=0;i<10;i++) {
             Message entity = new Message();
             entity.setMessage("Message created at " + System.currentTimeMillis());
+            entity.setCreated(new Timestamp(System.currentTimeMillis()));
             dao.save(entity);
         }
 
@@ -48,4 +54,29 @@ public class MessageRepositoryTest {
 
         Assert.assertEquals(0, dao.count());
     }
+    
+    @Test
+    public void testQueryDateInterval() throws InterruptedException {
+        Assert.assertNotNull(dao);
+
+        for(int i=0;i<3;i++) {
+            Message entity = new Message();
+            entity.setMessage("Message created at " + System.currentTimeMillis());
+            entity.setCreated(new Timestamp(System.currentTimeMillis()));
+            Thread.sleep(1000);
+            dao.save(entity);
+        }
+
+        Assert.assertEquals(3, dao.count());
+        
+        Timestamp min = dao.findFirstCreated();
+        
+        Assert.assertNotNull(min);
+
+        Timestamp max = dao.findFirstCreated();
+        
+        Assert.assertNotNull(max);
+
+    }
+
 }

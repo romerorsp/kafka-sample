@@ -1,5 +1,8 @@
 package br.com.cinq.kafka.sample.entity;
 
+import java.sql.Timestamp;
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -17,7 +20,18 @@ public class Message {
     @Column
     private String message;
 
-    public Integer getId() {
+    @Column 
+    private Timestamp created;
+    
+    public Timestamp getCreated() {
+		return created;
+	}
+
+	public void setCreated(Timestamp created) {
+		this.created = created;
+	}
+
+	public Integer getId() {
         return id;
     }
 

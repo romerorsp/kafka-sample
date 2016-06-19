@@ -17,7 +17,9 @@ broker:
     zookeeper: localhost:2181
     producer:
         bootstrapServer: localhost:9092
-        linger-time-ms: 0
+        linger-time-ms: 10
+        async-calls: true
+        acks: 0
     consumer:
         bootstrapServer: localhost:9092
 
