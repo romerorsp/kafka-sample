@@ -1,11 +1,10 @@
 package br.com.cinq.kafka.sample.kafka;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -169,7 +168,13 @@ public class BrokerProducer implements Producer {
 		try {
 			logger.debug("Sending message {} to [{}]", getTopic(), message);
 
-			Future<RecordMetadata> future = producer.send(new ProducerRecord<String, String>(getTopic(), message));
+			Future<RecordMetadata> future = producer.send(new ProducerRecord<String, String>(getTopic(), message),new Callback() {
+
+				@Override
+				public void onCompletion(RecordMetadata metadata, Exception exception) {
+					logger.info("Message delivered - offset {}", metadata.offset(), exception);
+				}
+			});
 
 			if (!isAsyncCalls()) {
 				future.get();
