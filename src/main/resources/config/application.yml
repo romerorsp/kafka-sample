@@ -5,7 +5,7 @@ spring:
     jersey:
         type: filter
     jpa:
-        
+
         openInView: false
         show_sql: false
         generate-ddl: false

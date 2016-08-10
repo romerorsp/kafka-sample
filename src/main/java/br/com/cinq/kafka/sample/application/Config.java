@@ -23,6 +23,9 @@ import br.com.cinq.kafka.sample.Consumer;
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.mono.QueueProducerConsumer;
 import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
+import kafka.admin.RackAwareMode.Disabled$;
+import kafka.admin.RackAwareMode.Enforced$;
 import kafka.common.Topic;
 import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
@@ -90,7 +93,7 @@ public class Config extends ResourceConfig {
         // Create
         if (!AdminUtils.topicExists(utils, getTopic())) {
             // Easiest way to create a Topic programatically
-            AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties());
+            AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties(),Enforced$.MODULE$);
 
             // "Manual" assignment of partitions and brokers, may cause problems
 //            Topic.validate(getTopic());

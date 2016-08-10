@@ -1,7 +1,9 @@
 package br.com.cinq.kafka.sample.kafka;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.clients.consumer.CommitFailedException;
@@ -107,10 +109,11 @@ public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener
 
 	private void seekPartitionsToEnd() {
 		if (BrokerConsumer.getOffsets() != null) {
-			TopicPartition[] partitions = BrokerConsumer.getOffsets().keySet().toArray(new TopicPartition[0]);
-
+		    List<TopicPartition> list = new ArrayList<>();
+		    for(TopicPartition t : BrokerConsumer.getOffsets().keySet())
+		        list.add(t);
 			try {
-				consumer.seekToEnd(partitions);
+				consumer.seekToEnd(list);
 			} catch (IllegalStateException e) {
 				logger.debug("{}", e.getMessage(), e);
 			}
