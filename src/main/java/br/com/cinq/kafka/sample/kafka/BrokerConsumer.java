@@ -81,6 +81,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.consumer.commitBeforeProcessing:false}")
     private boolean commitBeforeProcessing;
 
+    // Change to max.poll.records
     /** max.partition.fetch.bytes */
     @Value("${broker.consumer.maxPartitionFetchBytes:10240}")
     private int maxPartitionFetchBytes;
@@ -92,7 +93,11 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     @Value("${broker.consumer.start:true}")
     private boolean automaticStart = true;
 
-    
+    // Since 0.10.x
+    @Value("${broker.consumer.max-poll-records:1}")
+    private int maxPollRecords;
+
+
     private Callback callback;
 
     /** List of consumers */
@@ -141,9 +146,11 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
         props.put("value.deserializer", StringDeserializer.class.getName());
         //        props.put("rebalance.max.retries", getRebalanceMaxRetries()); Not supported on org.apache
         //        props.put("rebalance.backoff.ms", getRebalanceBackoff());
-        props.put("max.partition.fetch.bytes", getMaxPartitionFetchBytes());
+        if(getMaxPollRecords()==0)
+            props.put("max.partition.fetch.bytes", getMaxPartitionFetchBytes());
         props.put("receive.buffer.bytes", getReceiveBufferBytes());
         props.put("auto.offset.reset", "latest"); // end
+        props.put("max.poll.records", getMaxPollRecords());
 
         for (int i = 0; i < getPartitions(); i++) {
             // Initialize client
@@ -294,5 +301,13 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     public void setAutomaticStart(boolean automaticStart) {
         this.automaticStart = automaticStart;
+    }
+
+    public int getMaxPollRecords() {
+        return maxPollRecords;
+    }
+
+    public void setMaxPollRecords(int maxPollRecords) {
+        this.maxPollRecords = maxPollRecords;
     }
 }

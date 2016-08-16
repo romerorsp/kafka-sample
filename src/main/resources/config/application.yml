@@ -29,6 +29,7 @@ broker:
         enable-duplicates: false
         duplicates: 1
         commitBeforeProcessing: true
+        max-poll-records: 10
     producer:
         batch-size: 16384
         buffer-size: 33554432
