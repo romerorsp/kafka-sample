@@ -23,4 +23,5 @@ broker:
         acks: 0
     consumer:
         bootstrapServer: localhost:9092
-
+        commit-before-processing: true
+        max-poll-records: 50

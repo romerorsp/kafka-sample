@@ -20,3 +20,5 @@ broker:
         acks: 0
     consumer:
         bootstrapServer: 192.168.226.212:9092
+        commit-before-processing: true
+        max-poll-records: 50

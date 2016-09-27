@@ -5,6 +5,9 @@
 	<property name="LOG_PATH" value="logs" />
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
 		<layout class="ch.qos.logback.classic.PatternLayout">
 			<Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
 			</Pattern>
@@ -39,9 +42,13 @@
 		</encoder>
 	</appender>
 
-	<logger name="br.com.cinq" level="INFO" />
+	<logger name="br.com.cinq" level="DEBUG">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FileLog" />
+	</logger>
 
-	<logger name="org.apache.kafka.clients" level="TRACE" additivity="false">
+	<logger name="org.apache.kafka.clients" level="DEBUG"
+		additivity="false">
 		<appender-ref ref="KafkaTrace" />
 	</logger>
 

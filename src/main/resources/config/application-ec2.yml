@@ -20,3 +20,5 @@ broker:
         linger-time-ms: 0
     consumer:
         bootstrapServer: ec2-52-91-88-55.compute-1.amazonaws.com:9092
+        commit-before-processing: true
+        max-poll-records: 50

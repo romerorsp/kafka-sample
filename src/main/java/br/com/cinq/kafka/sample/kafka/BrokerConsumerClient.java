@@ -3,8 +3,10 @@ package br.com.cinq.kafka.sample.kafka;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
@@ -21,194 +23,230 @@ import org.slf4j.LoggerFactory;
 import br.com.cinq.kafka.sample.Callback;
 
 public class BrokerConsumerClient implements Runnable, ConsumerRebalanceListener {
-	Logger logger = LoggerFactory.getLogger(BrokerConsumerClient.class);
+    Logger logger = LoggerFactory.getLogger(BrokerConsumerClient.class);
 
-	private KafkaConsumer<String, String> consumer;
+    private KafkaConsumer<String, String> consumer;
 
-	private boolean enableAutoCommit = false;
+    private boolean enableAutoCommit = false;
 
-	private Callback callback;
+    private Callback callback;
 
-	private Properties properties;
+    private Properties properties;
 
-	private String topic;
+    private String topic;
 
-	private int partition;
+    private int partition;
 
-	private boolean commitBeforeProcessing;
+    private boolean commitBeforeProcessing;
 
-	@Override
-	public void run() {
+    private boolean pauseForProcessing;
 
-		// By enabling this, you ignore whatever message that wasn't processed
-		// seekPartitionsToEnd();
+    @Override
+    public void run() {
 
-		try {
-			while (true) {
-				ConsumerRecords<String, String> records = getConsumer().poll(Integer.MAX_VALUE);
-				if (records != null) {
+        // By enabling this, you ignore whatever message that wasn't processed
+        // seekPartitionsToEnd();
 
-					// Commit right after processing messages. In case of commit failure,
-					// you just IGNORE the messages received, hoping that the other node in the cluster
-					// receives them
-					if (!isEnableAutoCommit() && isCommitBeforeProcessing()) {
-						try {
-							getConsumer().commitSync();
-						} catch (CommitFailedException e) {
-							logger.debug("Commit failed!!! {}", e.getMessage(), e);
+        try {
+            while (true) {
+                ConsumerRecords<String, String> records = getConsumer().poll(Integer.MAX_VALUE);
+                if (records != null) {
 
-							seekPartitionsToEnd();
-						}
-					}
+                    // Commit right after processing messages. In case of commit failure,
+                    // you just IGNORE the messages received, hoping that the other node in the cluster
+                    // receives them
+                    if (!isEnableAutoCommit() && isCommitBeforeProcessing()) {
+                        try {
+                            getConsumer().commitSync();
+                        } catch (CommitFailedException e) {
+                            logger.warn("Commit failed!!! {}", e.getMessage(), e);
 
-					int count = 0;
-					for (ConsumerRecord<String, String> record : records) {
-						logger.debug("tid {}, offset = {}, key = {}, value = {}", Thread.currentThread().getName(), record.offset(), record.key(),
-								record.value());
-						count++;
-						callback.receive(record.value());
+                            seekPartitionsToEnd();
+                        }
+                    }
 
-						BrokerConsumer.getOffsets().put(new TopicPartition(record.topic(), record.partition()), record.offset());
-					}
-					logger.info("tid {} processed {} messages", Thread.currentThread().getName(), count);
-				}
-				if (!isEnableAutoCommit() && !isCommitBeforeProcessing()) {
-					try {
-						getConsumer().commitSync();
-					} catch (CommitFailedException e) {
-						// You WILL get exceptions due to rebalance, from time to time in clustered
-						// environments.
-						// It is up to you the deal with these situations.
-						// Our Callback.receive() is transactional, but you end up in situations
-						// that you will have to implement two-phase commit to recover from this failure.
-						// After you receive an error during kafka commit either rollback database transaction
-						// OR ignore kafka and seek() the offsets like we did in the example.
-						// Problem is, other nodes in the cluster WILL receive the messages you didn't
-						// commit during rebalance, so if you choose not using two phase commit and
-						// rollback eventual database transactions, you will
-						// have to deal with duplicates.
-						// Another approach is to commitSync() right after poll(). In that case, you
-						// should update the offsets after the messages are processed. In case of commit failure,
-						// you just IGNORE the messages received, hoping that the other node in the cluster
-						// receives the messages :-o
-						logger.debug("Commit failed!!! {}", e.getMessage(), e);
+                    // Pause queues
+                    List<TopicPartition> partitions = null;
+                    if (isPauseForProcessing()) {
+                        partitions = new ArrayList<>();
+                        for (ConsumerRecord<String, String> record : records) {
+                            TopicPartition topic = new TopicPartition(record.topic(), record.partition());
+                            partitions.add(topic);
+                        }
+                        logger.debug("Queue paused");
+                        getConsumer().pause(partitions);
+                    }
 
-						seekPartitionsToEnd();
-					}
-				}
-			}
-		} catch (TimeoutException e) {
-			logger.warn("TimeoutException", e);
-		} catch (WakeupException e) {
-			// In this situation it would be better to restart the loop
-			logger.warn("Wake up exception", e);
-		} catch (RebalanceInProgressException e) {
-			logger.warn("Rebalance In Progress", e);
-		}
-	}
+                    int count = 0;
+                    for (ConsumerRecord<String, String> record : records) {
+                        logger.debug("tid {}, offset = {}, key = {}, value = {}", Thread.currentThread()
+                                                                                        .getName(), record.offset(), record.key(),
+                            record.value());
+                        count++;
 
-	private void seekPartitionsToEnd() {
-		if (BrokerConsumer.getOffsets() != null) {
-		    List<TopicPartition> list = new ArrayList<>();
-		    for(TopicPartition t : BrokerConsumer.getOffsets().keySet())
-		        list.add(t);
-			try {
-				consumer.seekToEnd(list);
-			} catch (IllegalStateException e) {
-				logger.debug("{}", e.getMessage(), e);
-			}
-		}
-	}
+                        // Process
+                        callback.receive(record.value());
 
-	/**
-	 * Return the current consumer. If the consumer is not registered with Kafka,
-	 * it will register, for All the partitions.
-	 * @return
-	 */
-	public KafkaConsumer<String, String> getConsumer() {
-		if (consumer == null) {
-			consumer = new KafkaConsumer<>(properties);
+                        // Save Offsets
+                        BrokerConsumer.getOffsets()
+                                      .put(new TopicPartition(record.topic(), record.partition()), record.offset());
+                    }
 
-			//List<TopicPartition> partitions = new ArrayList<TopicPartition>();
-			//            for (PartitionInfo partition : consumer.partitionsFor(getTopic()))
-			//                partitions.add(new TopicPartition(getTopic(), partition.partition()));
-			//            consumer.assign(partitions);
+                    // Resume
+                    if (isPauseForProcessing()) {
+                        logger.debug("Queue paused");
+                        getConsumer().resume(partitions);
+                    }
 
-			consumer.subscribe(Arrays.asList(getTopic()));
+                    logger.debug("tid {} processed {} messages", Thread.currentThread()
+                                                                       .getName(), count);
+                }
+                if (!isEnableAutoCommit() && !isCommitBeforeProcessing()) {
+                    try {
+                        getConsumer().commitSync();
+                    } catch (CommitFailedException e) {
+                        // You WILL get exceptions due to rebalance, from time to time in clustered
+                        // environments.
+                        // It is up to you the deal with these situations.
+                        // Our Callback.receive() is transactional, but you end up in situations
+                        // that you will have to implement two-phase commit to recover from this failure.
+                        // After you receive an error during kafka commit either rollback database transaction
+                        // OR ignore kafka and seek() the offsets like we did in the example.
+                        // Problem is, other nodes in the cluster WILL receive the messages you didn't
+                        // commit during rebalance, so if you choose not using two phase commit and
+                        // rollback eventual database transactions, you will
+                        // have to deal with duplicates.
+                        // Another approach is to commitSync() right after poll(). In that case, you
+                        // should update the offsets after the messages are processed. In case of commit failure,
+                        // you just IGNORE the messages received, hoping that the other node in the cluster
+                        // receives the messages :-o
+                        logger.warn("Commit failed!!! {}", e.getMessage(), e);
 
-			// This will cause the
-			//            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
-			//            consumer.assign(Arrays.asList(partition));
+                        seekPartitionsToEnd();
+                    }
+                }
+            }
+        } catch (TimeoutException e) {
+            logger.warn("TimeoutException", e);
+        } catch (WakeupException e) {
+            // In this situation it would be better to restart the loop
+            logger.warn("Wake up exception", e);
+        } catch (RebalanceInProgressException e) {
+            logger.warn("Rebalance In Progress", e);
+        }
+    }
 
-		}
-		return consumer;
-	}
+    private void seekPartitionsToEnd() {
+        if (BrokerConsumer.getOffsets() != null) {
+            List<TopicPartition> list = new ArrayList<>();
+            for (TopicPartition t : BrokerConsumer.getOffsets()
+                                                  .keySet())
+                list.add(t);
+            try {
+                consumer.seekToEnd(list);
+            } catch (IllegalStateException e) {
+                logger.debug("{}", e.getMessage(), e);
+            }
+        }
+    }
 
-	public void setConsumer(KafkaConsumer<String, String> consumer) {
-		this.consumer = consumer;
-	}
+    /**
+     * Return the current consumer. If the consumer is not registered with Kafka,
+     * it will register, for All the partitions.
+     * @return
+     */
+    public KafkaConsumer<String, String> getConsumer() {
+        if (consumer == null) {
+            consumer = new KafkaConsumer<>(properties);
 
-	public Callback getCallback() {
-		return callback;
-	}
+            //List<TopicPartition> partitions = new ArrayList<TopicPartition>();
+            //            for (PartitionInfo partition : consumer.partitionsFor(getTopic()))
+            //                partitions.add(new TopicPartition(getTopic(), partition.partition()));
+            //            consumer.assign(partitions);
 
-	public void setCallback(Callback callback) {
-		this.callback = callback;
-	}
+            consumer.subscribe(Arrays.asList(getTopic()));
 
-	public boolean isEnableAutoCommit() {
-		return enableAutoCommit;
-	}
+            // This will cause the
+            //            TopicPartition partition = new TopicPartition(getTopic(), getPartition());
+            //            consumer.assign(Arrays.asList(partition));
 
-	public void setEnableAutoCommit(boolean enableAutoCommit) {
-		this.enableAutoCommit = enableAutoCommit;
-	}
+        }
+        return consumer;
+    }
 
-	public Properties getProperties() {
-		return properties;
-	}
+    public void setConsumer(KafkaConsumer<String, String> consumer) {
+        this.consumer = consumer;
+    }
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
+    public Callback getCallback() {
+        return callback;
+    }
 
-	public String getTopic() {
-		return topic;
-	}
+    public void setCallback(Callback callback) {
+        this.callback = callback;
+    }
 
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
+    public boolean isEnableAutoCommit() {
+        return enableAutoCommit;
+    }
 
-	public int getPartition() {
-		return partition;
-	}
+    public void setEnableAutoCommit(boolean enableAutoCommit) {
+        this.enableAutoCommit = enableAutoCommit;
+    }
 
-	public void setPartition(int partition) {
-		this.partition = partition;
-	}
+    public Properties getProperties() {
+        return properties;
+    }
 
-	@Override
-	public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-		logger.warn("Paritions revoked from this node during rebalancing:");
-		for (TopicPartition partition : partitions) {
-			logger.warn("Revoked from this node {}", partition.toString());
-		}
-	}
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
 
-	@Override
-	public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-		logger.warn("Paritions assigned to this node during rebalancing:");
-		for (TopicPartition partition : partitions) {
-			logger.warn("Rebalanced to this node {}", partition.toString());
-		}
-	}
+    public String getTopic() {
+        return topic;
+    }
 
-	public boolean isCommitBeforeProcessing() {
-		return commitBeforeProcessing;
-	}
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
 
-	public void setCommitBeforeProcessing(boolean commitBeforeProcessing) {
-		this.commitBeforeProcessing = commitBeforeProcessing;
-	}
+    public int getPartition() {
+        return partition;
+    }
+
+    public void setPartition(int partition) {
+        this.partition = partition;
+    }
+
+    @Override
+    public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+        logger.warn("Paritions revoked from this node during rebalancing:");
+        for (TopicPartition partition : partitions) {
+            logger.warn("Revoked from this node {}", partition.toString());
+        }
+    }
+
+    @Override
+    public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+        logger.warn("Paritions assigned to this node during rebalancing:");
+        for (TopicPartition partition : partitions) {
+            logger.warn("Rebalanced to this node {}", partition.toString());
+        }
+    }
+
+    public boolean isCommitBeforeProcessing() {
+        return commitBeforeProcessing;
+    }
+
+    public void setCommitBeforeProcessing(boolean commitBeforeProcessing) {
+        this.commitBeforeProcessing = commitBeforeProcessing;
+    }
+
+    public boolean isPauseForProcessing() {
+        return pauseForProcessing;
+    }
+
+    public void setPauseForProcessing(boolean pauseForProcessing) {
+        this.pauseForProcessing = pauseForProcessing;
+    }
 }

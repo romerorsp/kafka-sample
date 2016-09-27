@@ -1,7 +1,6 @@
 package br.com.cinq.kafka.sample.callback;
 
 import java.sql.Timestamp;
-import java.util.Date;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -31,7 +30,7 @@ public class MyCallback implements Callback {
     @Override
     @Transactional
     public void receive(String message) {
-        logger.info("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
+        logger.debug("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
 
         EntityTransaction trn = null;
         try {

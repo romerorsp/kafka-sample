@@ -172,7 +172,7 @@ public class BrokerProducer implements Producer {
 
 				@Override
 				public void onCompletion(RecordMetadata metadata, Exception exception) {
-					logger.info("Message delivered - offset {}", metadata.offset(), exception);
+					logger.debug("Message delivered - offset {}", metadata!=null?metadata.offset():-1L, exception);
 				}
 			});
 

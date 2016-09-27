@@ -78,7 +78,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
     private int rebalanceBackoff;
 
     /** Commit right after retrieving messages from Kafka. */
-    @Value("${broker.consumer.commitBeforeProcessing:false}")
+    @Value("${broker.consumer.commit-before-processing:false}")
     private boolean commitBeforeProcessing;
 
     // Change to max.poll.records
@@ -92,6 +92,9 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     @Value("${broker.consumer.start:true}")
     private boolean automaticStart = true;
+    
+    @Value("${broker.consumer.pause-for-processing:false}")
+    private boolean pauseForProcessing;
 
     // Since 0.10.x
     @Value("${broker.consumer.max-poll-records:1}")
@@ -161,6 +164,7 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
             client.setTopic(getTopic());
             client.setCommitBeforeProcessing(getCommitBeforeProcessing());
             client.setProperties(props);
+            client.setPauseForProcessing(isPauseForProcessing());
             if (callback == null) {
                 client.setCallback(context.getBean(Callback.class));
                 logger.debug(client.getCallback().toString());
@@ -309,5 +313,13 @@ public class BrokerConsumer implements Consumer, DisposableBean, InitializingBea
 
     public void setMaxPollRecords(int maxPollRecords) {
         this.maxPollRecords = maxPollRecords;
+    }
+
+    public boolean isPauseForProcessing() {
+        return pauseForProcessing;
+    }
+
+    public void setPauseForProcessing(boolean pauseForProcessing) {
+        this.pauseForProcessing = pauseForProcessing;
     }
 }
