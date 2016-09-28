@@ -1,8 +1,8 @@
 package br.com.cinq.kafka.sample.callback;
 
+import java.sql.Timestamp;
+
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
-import javax.transaction.Transaction;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
@@ -18,33 +18,35 @@ import br.com.cinq.kafka.sample.repository.MessagesRepository;
 @Component
 @Scope("prototype")
 public class MyCallback implements Callback {
-    static Logger logger = LoggerFactory.getLogger(MyCallback.class);
+   static Logger logger = LoggerFactory.getLogger(MyCallback.class);
 
-    @Autowired
-    MessagesRepository dao;
+   @Autowired
+   MessagesRepository dao;
 
-    @Autowired
-    EntityManager em;
+   @Autowired
+   EntityManager em;
 
-    @Override
-    @Transactional
-    public void receive(String message) {
-        logger.info("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
+   @Override
+   @Transactional
+   public void receive(String message) {
+      logger.debug("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
 
-        EntityTransaction trn = null;
-        try {
-            Message entity = new Message();
-//            entity.setMessage(message);
-//            trn = em.getTransaction();
-//            trn.begin();
-            dao.save(entity);
-//            trn.commit();
-//            trn = null;
-        } catch (Exception e) {
-            logger.error("Couldn't insert a message",e);
-        } finally {
-//            if (trn != null)
-//                trn.rollback();
-        }
-    }
+      if(message != null && message.startsWith("#oEstop#")) {
+         try {
+            logger.warn("Gonna Sleep...");
+            Thread.sleep(30 * 1000);
+         } catch (InterruptedException e) {
+            logger.warn(e.getMessage());
+         }
+      }
+      try {
+         Message entity = new Message();
+         entity.setMessage(message);
+         entity.setCreated(new Timestamp(System.currentTimeMillis()));
+         dao.save(entity);
+      } catch (Exception e) {
+         logger.error("Couldn't insert a message", e);
+      } finally {
+      }
+   }
 }

@@ -5,8 +5,9 @@ spring:
     jersey:
         type: filter
     jpa:
+
         openInView: false
-        show_sql: true
+        show_sql: false
         generate-ddl: false
         hibernate:
             ddl-auto: none
@@ -16,9 +17,9 @@ spring:
              hibernate.cache.use_query_cache: false
              hibernate.generate_statistics: false
              hibernate.cache.region.factory_class: org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory
-
 broker:
     partitions: 10
+    replication-factor: 1
     topic: kafka-sample
     session-timeout: 30000
     consumer:
@@ -28,5 +29,5 @@ broker:
         enable-duplicates: false
         duplicates: 1
     producer:
-        batch-size: 16384
+        batch-size: 32768
         buffer-size: 33554432
